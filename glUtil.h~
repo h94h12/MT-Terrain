@@ -1,0 +1,78 @@
+#include <vector>
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <cmath>
+#include <list>
+#include <stdlib.h>
+#include <string>
+
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <sys/time.h>
+#endif
+
+#ifdef OSX
+#include <GLUT/glut.h>
+#include <OpenGL/glu.h>
+#else
+#include <GL/glut.h>
+#include <GL/glu.h>
+#endif
+
+#include <time.h>
+#include <math.h>
+#include "Eigen/Dense"
+#include "Eigen/StdVector"
+
+using namespace std;
+using namespace Eigen;
+
+typedef Matrix<Vector3f, 4, 4, 0, 4, 4> Matrix4v;
+
+class Quad;
+class Triangle;
+class Curve;
+
+extern vector< Vector3f, Eigen::aligned_allocator<Eigen::Vector3f> > vertices, normals;
+extern vector<Quad> quads;
+extern vector<Triangle> tris;
+
+extern bool flat, wireframe, adaptive;
+extern float rotUD, rotLR, xtrans, ytrans, error;
+
+class Curve {
+public:
+	Vector3f curve[4];
+	Curve(Vector3f a, Vector3f b, Vector3f c, Vector3f d);
+	Curve();
+	Vector3f bezCurveInterp(float u, Vector3f &deriv);
+};
+
+class BezierPatch {
+public:
+	Matrix4v patch; // Control patch matrix
+	Curve curves[8]; // First 4 are for a curve in v, second 4 are for a curve in u 
+	BezierPatch();
+	Vector3f bezPatchInterp(float u, float v, Vector3f &normal);
+	void setupCurves();
+	void subdivision(float ustep, float vstep);
+	void addTriangles(Vector2f uv1, Vector2f uv2, Vector2f uv3, Vector3f v1, Vector3f v2, Vector3f v3, Vector3f n1, Vector3f n2, Vector3f n3, int depth);
+	void adaptive();
+};
+
+class Quad {
+public:
+	int vs[4];
+	Quad(int uv, int uv1, int u1v1, int u1v);
+	void draw();
+};
+
+class Triangle {
+public:
+	int vs[3];
+	Triangle(int a, int b, int c);
+	void draw();
+};
+

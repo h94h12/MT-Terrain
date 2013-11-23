@@ -1,0 +1,288 @@
+#include "glUtil.h"
+
+using namespace std;
+using namespace Eigen;
+
+//****************************************************
+// Some Classes
+//****************************************************
+
+class Viewport;
+
+class Viewport {
+  public:
+    int w, h; // width and height
+};
+
+//****************************************************
+// Global Variables
+//****************************************************
+Viewport viewport;
+vector< BezierPatch, Eigen::aligned_allocator<BezierPatch> > patches;
+vector< Vector3f, Eigen::aligned_allocator<Eigen::Vector3f> > vertices, normals;
+vector<Quad> quads;
+vector<Triangle> tris;
+
+float ustep, vstep, error, max_z = 0, focus = 60;
+float rotUD = 0, rotLR = 0, rotQE = 0, ytrans = 0, xtrans = 0;
+bool flat, wireframe, adaptive;
+GLfloat mat_specular[] = {1.0f, 0.8f, 0.8f, 0.0f};
+GLfloat mat_shininess[] = {128.0f};
+GLfloat mat_ambient[] = {0.1f, 0.1f, 0.1f, 0.0f};
+GLfloat mat_diffusion[] = {0.95f, 0.95f, 0.95f, 0.0f};
+GLfloat light_position[] = {5.0f, 5.0f, 5.0f, 1.0f};
+GLfloat light_diffuse[] = {0.0f, 0.3f, 0.5f, 1.0f};
+GLfloat light_specular[] = {1.0f, 1.0f, 0.0f, 0.0f};
+GLfloat light_ambient[] = {0.1f, 0.1f, 0.1f, 0.0f};
+
+//****************************************************
+// GLUT and Initialization Functions
+//****************************************************
+
+void reshape(int w, int h) {
+	viewport.w = w;
+	viewport.h = h;
+
+	glViewport(0, 0, w, h);
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	gluPerspective(focus, (GLfloat) w/ (GLfloat) h, 1.0, 40.0);
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+	gluLookAt(0, 0, (max_z + 2.0f)*3.0f, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+}
+
+void display(void) {
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	if (flat) {
+		glShadeModel(GL_FLAT);
+	} else {
+		glShadeModel(GL_SMOOTH);
+	}
+
+	glPushMatrix();
+	glTranslatef(xtrans, ytrans, 0);
+	glRotatef(rotUD, 1, 0, 0);
+	glRotatef(rotLR, 0, 1, 0);
+	glRotatef(rotQE, 0, 0, 1);
+	if (adaptive) {
+		for (int i = 0; i < tris.size(); i++) {
+			tris[i].draw();
+		}
+	} else {
+		for (int i = 0; i < quads.size(); i++) {
+			quads[i].draw();
+		}
+	}
+	glPopMatrix();
+	glutSwapBuffers();
+}
+
+void idle (void) {
+	glutPostRedisplay();
+}
+
+void processSpecialKeys(int key, int x, int y) {
+	switch(key) {
+	case GLUT_KEY_RIGHT:
+		if (glutGetModifiers() == GLUT_ACTIVE_SHIFT) {
+			xtrans += .15f*(focus/60.0);
+		} else {
+			rotLR += 1.0f*(focus/60.0);
+		}
+		break;
+	case GLUT_KEY_LEFT:
+		if (glutGetModifiers() == GLUT_ACTIVE_SHIFT) {
+			xtrans -= .15f*(focus/60.0);
+		} else {
+			rotLR -= 1.0f*(focus/60.0);
+		}
+		break;
+	case GLUT_KEY_UP:
+		if (glutGetModifiers() == GLUT_ACTIVE_SHIFT) {
+			ytrans += .15f*(focus/60.0);
+		} else {
+			rotUD -= 1.0f*(focus/60.0); 
+		}
+		break;
+	case GLUT_KEY_DOWN:
+		if (glutGetModifiers() == GLUT_ACTIVE_SHIFT) {
+			ytrans -= .15f*(focus/60.0);
+		} else {
+			rotUD += 1.0f*(focus/60.0);
+		}
+		break;
+	}
+}
+
+void keyboard(unsigned char key, int x, int y) {
+	switch (key) {
+	case 's':
+		if (flat) {
+			flat = false;
+		} else {
+			flat = true;
+		}
+		break;
+	case 'w':
+		if (wireframe) {
+			wireframe = false;
+		} else {
+			wireframe = true;
+		}
+		break;
+	case '+':
+		focus *= 0.95f;
+		if (focus < 0.1f) {
+			focus = 0.1f;
+		}
+		glMatrixMode(GL_PROJECTION);
+		glLoadIdentity();
+		gluPerspective(focus, (GLfloat) viewport.w/ (GLfloat) viewport.h, 1.0, 40.0);
+		glMatrixMode(GL_MODELVIEW);
+		break;
+	case '-':
+		focus *= 1.0f/0.95f;
+		if (focus > 89.1f) {
+			focus = 89.99f;
+		}
+		glMatrixMode(GL_PROJECTION);
+		glLoadIdentity();
+		gluPerspective(focus, (GLfloat) viewport.w/ (GLfloat) viewport.h, 1.0, 40.0);
+		glMatrixMode(GL_MODELVIEW);
+		break;
+	case 'q':
+		rotQE += 1.0f*(focus/60.0);
+		break;
+	case 'e':
+		rotQE -= 1.0f*(focus/60.0);
+		break;
+	case 27:
+		exit(0);
+		break;
+	}
+}
+
+void loadData(string file) {
+	ifstream inpfile(file.c_str());
+	if (!inpfile.is_open()) {
+		cout << "Unable to open file" << endl;
+		exit(0);
+	} else {
+		int counter = 0;
+		BezierPatch temp;
+		string line;
+		
+		while(inpfile.good()) {
+			vector<string> splitline;
+			string buf;
+
+			
+			getline(inpfile, line);
+			stringstream ss(line);
+
+			while (ss >> buf) {
+				splitline.push_back(buf);
+			}
+
+			if(splitline.size() == 0) {
+				continue;
+			}
+			
+			if (splitline[0][0] == '#') {
+				continue;
+			}
+
+			if (splitline.size() < 3) {
+				continue;
+			}
+
+			else {
+				temp.patch(counter, 0) = Vector3f(atof(splitline[0].c_str()), atof(splitline[1].c_str()), atof(splitline[2].c_str()));
+				temp.patch(counter, 1) = Vector3f(atof(splitline[3].c_str()), atof(splitline[4].c_str()), atof(splitline[5].c_str()));
+				temp.patch(counter, 2) = Vector3f(atof(splitline[6].c_str()), atof(splitline[7].c_str()), atof(splitline[8].c_str()));
+				temp.patch(counter, 3) = Vector3f(atof(splitline[9].c_str()), atof(splitline[10].c_str()), atof(splitline[11].c_str())); 
+				float zmax = max( max( atof(splitline[2].c_str()), atof(splitline[5].c_str()) ), max(atof(splitline[8].c_str()), atof(splitline[11].c_str())));
+				if (zmax > max_z) {
+					max_z = zmax;
+				}
+				counter++;
+				if (counter == 4) {
+					counter = 0;
+					temp.setupCurves();
+					if (adaptive) {
+						temp.adaptive();
+					} else {
+						temp.subdivision(ustep, vstep);
+					}
+					patches.push_back(temp);
+				}
+			}
+		}
+		fflush(stdout);
+		inpfile.close();
+	}
+}
+
+int main(int argc, char* argv[]) {
+	viewport.h = 800;
+	viewport.w = 800;
+
+	ustep = atof(argv[2]);
+	vstep = atof(argv[2]);
+	error = atof(argv[2]);
+
+	flat = false;
+	wireframe = false;
+
+	if ((argc > 3) && (strcmp(argv[3], "-a")==0)) {
+		adaptive = true;
+	} else {
+		adaptive = false;
+	}
+
+	loadData(string(argv[1]));
+
+	glutInit(&argc, argv);
+	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
+	glutInitWindowSize(viewport.w, viewport.h);
+	glutInitWindowPosition(0,0);
+	glutCreateWindow("BezierCurve");
+	
+	glClearColor(0, 0, 0, 0);
+	
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	gluPerspective(60.0, (float)viewport.w/(float)viewport.h, 1.0, 40.0);
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+
+	glEnable(GL_DEPTH_TEST);
+	//glEnable(GL_COLOR_MATERIAL);
+	glEnable(GL_LIGHTING);
+	glEnable(GL_LIGHT0);
+
+	glShadeModel(GL_SMOOTH);
+	glMaterialfv(GL_FRONT, GL_AMBIENT, mat_ambient);
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffusion);
+	glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
+	glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
+
+	glLightfv(GL_LIGHT0, GL_POSITION, light_position);
+	glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
+	glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
+	
+	glutDisplayFunc(display);
+	glutReshapeFunc(reshape);
+	glutKeyboardFunc(keyboard);
+	glutSpecialFunc(processSpecialKeys);
+	glutIdleFunc(idle);
+	glutMainLoop();
+	return 0;
+}
+
+
+
+
