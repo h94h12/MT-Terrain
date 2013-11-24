@@ -39,11 +39,12 @@ using namespace std;
 
 #define MIN_FLOAT 1e-37f
 #define limit 11
-#define epsilon 0.0f
+#define epsilon 0.005f
 
 typedef pair<Vector3f*, Vector3f*> PairVecP;
 
-extern bool wireframe;
+extern bool wireframe, drawTets;
+extern int counter;
 
 class Grid;
 
@@ -77,6 +78,7 @@ public:
 	Edge(Vector3f *v1, Vector3f *v2);
 	Edge();
 	bool findCP(float (*f)(Vector3f), Vector3f &intersection);
+	Vector3f bisection(float (*f)(Vector3f), Vector3f left, Vector3f right);
 };
 
 class Grid {

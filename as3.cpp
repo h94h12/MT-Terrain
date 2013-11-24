@@ -12,7 +12,7 @@ class Viewport {
 };
 
 float density(Vector3f point) {
-	return point.dot(point) - .98;
+	return point(0);
 }
 
 //****************************************************
@@ -23,7 +23,7 @@ Viewport viewport;
 Grid *grid;
 float ustep, vstep, error, max_z = 0, focus = 60;
 float rotUD = 0, rotLR = 0, rotQE = 0, ytrans = 0, xtrans = 0, ztrans = 0;
-bool flat, wireframe, adaptive;
+bool flat, wireframe, adaptive, drawTets;
 GLfloat mat_specular[] = {1.0f, 0.8f, 0.8f, 0.0f};
 GLfloat mat_shininess[] = {128.0f};
 GLfloat mat_ambient[] = {0.1f, 0.1f, 0.1f, 0.0f};
@@ -121,6 +121,13 @@ void keyboard(unsigned char key, int x, int y) {
 	case 'c':
 		ztrans -= .15f*(focus/60.0);
 		break;
+	case 'p':
+		if (drawTets) {
+			drawTets = false;
+		} else {
+			drawTets = true;
+		}
+		break;
 	case 'w':
 		if (wireframe) {
 			wireframe = false;
@@ -177,6 +184,7 @@ int main(int argc, char* argv[]) {
 	grid = new Grid(Vector3f(0, 0, 0), Vector3f(.05, .05, .05), Vector3f(3, 3, 3), density);
 
 	wireframe = false;
+	drawTets = false;
 
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
@@ -192,10 +200,11 @@ int main(int argc, char* argv[]) {
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 
-	glEnable(GL_DEPTH_TEST);
+
+	//glEnable(GL_DEPTH_TEST);
 	//glEnable(GL_COLOR_MATERIAL);
-	glEnable(GL_LIGHTING);
-	glEnable(GL_LIGHT0);
+	//glEnable(GL_LIGHTING);
+	//glEnable(GL_LIGHT0);
 
 	//glShadeModel(GL_SMOOTH);
 	//glMaterialfv(GL_FRONT, GL_AMBIENT, mat_ambient);
