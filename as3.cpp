@@ -15,17 +15,15 @@ class Viewport {
 HeightMap h; 
 
 void initializeDensityFunction(){
-    h = HeightMap(512); 
+    h = HeightMap(10); 
     h.addPerlinNoise(4); 
     h.perturb(32, 32);
   
 }
 
 float density(Vector3f point) {
-    int x = (int)floorf((point[0] + 3)/6 * 512);
-    int y = (int)floorf((point[1] + 3)/6 * 512);
-    float height = h.heights[x * 512 + y];  
-    return height - point[2]; 
+  Perlin p = Perlin(); 
+  return p.Noise(point[0], point[1], point[2]); 
 }
 
 //****************************************************

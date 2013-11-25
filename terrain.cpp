@@ -16,6 +16,10 @@ Perlin::Perlin(){
 
 }
 
+
+
+
+
 float Perlin::Noise(float x, float y, float z)
  {
   int ix = (int)floorf(x);
@@ -59,8 +63,8 @@ void Perlin::InitGradients()
  {
   for (int i = 0; i < gradTableSize; i++)
   {
-   float z = 1 - 2 * (float)rand(); 
-   float r = (float)sqrt(1 - z * z);
+   float z = 1 - 2 * (float)(rand() % 256); 
+   float r = (float)sqrt(abs(1 - z * z));
    float theta = 2 * (float)M_PI *(float)rand(); 
    gradients[i * 3] = r * (float)cos(theta);
    gradients[i * 3 + 1] = r * (float)sin(theta);
