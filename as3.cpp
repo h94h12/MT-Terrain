@@ -12,7 +12,7 @@ class Viewport {
 };
 
 float density(Vector3f point) {
-	return point(0);
+	return point.dot(point) - .75;
 }
 
 //****************************************************
