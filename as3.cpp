@@ -15,15 +15,24 @@ class Viewport {
 HeightMap h; 
 
 void initializeDensityFunction(){
-    h = HeightMap(10); 
-    h.addPerlinNoise(4); 
-    h.perturb(32, 32);
+    h = HeightMap(100); 
+    h.addPerlinNoise(20); 
+    //h.perturb(16, 16); 
+    for(int i = 0; i < 10; i++) h.erode(16); 
+    h.smoothen(); 
   
 }
 
 float density(Vector3f point) {
-  Perlin p = Perlin(); 
-  return p.Noise(point[0], point[1], point[2]); 
+    int x = point[0]*10 + 40;  
+    int y = point[2]*10 + 40; 
+    float height = h.heights[x * 100 + y]/250; 
+    
+    
+    //int x = (int)floorf((point[0] + 4)/8 * 64);
+    //int z = (int)floorf((point[2] + 4)/8 * 64);
+    //float height = (h.heights[x * 64 + z])/200 * 3;  
+    return height - point[1]; 
 }
 
 //****************************************************
@@ -189,12 +198,26 @@ void loadData(string file) {
 	}
 }
 
+void test(){
+    for(int i = 0; i < h.size; i++){
+        for(int j = 0; j < h.size; j++){
+            printf("%f \n ", h.heights[i*h.size + j]); 
+            
+        }
+      
+    }
+}
+
 int main(int argc, char* argv[]) {
 	viewport.h = 800;
 	viewport.w = 800;
+    
+
+    
 
     initializeDensityFunction(); 
-	grid = new Grid(Vector3f(0, 0, 0), Vector3f(.1, .1, .1), Vector3f(3, 3, 3), density);
+    //test(); 
+	grid = new Grid(Vector3f(0, 0, 0), Vector3f(.1, .1, .1), Vector3f(4, 4, 4), density);
 
 	wireframe = false;
 	drawTets = false;

@@ -32,6 +32,7 @@ class HeightMap{
     public:
     float* heights; 
     int size; 
+    int max_height; 
     Perlin perlin; 
     
     HeightMap(){}; 

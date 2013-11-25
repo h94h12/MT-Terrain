@@ -102,7 +102,7 @@ float Perlin::Smooth(float x)
 
 
 HeightMap::HeightMap(int s){
-    size = s; 
+    size = s;
     heights = new float[s*s]; 
     perlin = Perlin(); 
     
