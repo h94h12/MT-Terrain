@@ -1,6 +1,8 @@
 #include "glUtil.h"
 
 int counter = 0;
+Vector3f tempNormal = Vector3f(0, 1, 0); 
+
 
 bool std::operator==(const PairVecP &l, const PairVecP &r) {
         return ((l.first==r.first)&&(l.second==r.second))||((l.first==r.second)&&(l.second==r.first));
@@ -40,7 +42,8 @@ bool Edge::findCP(float (*f)(Vector3f), Vector3f &intersection) {
         if ((v1pt&&v2pt)||(v2nt&&v1nt)) {
                 return false;
         } else {
-                intersection = bisection(f, *v1, *v2);
+                //intersection = bisection(f, *v1, *v2);
+                intersection = *v1 + (*v2 - *v1)*(-v1d / (v2d - v1d));
                 return true;
         }
 }
@@ -76,6 +79,7 @@ Vector3f Edge::bisection(float (*f)(Vector3f), Vector3f left, Vector3f right) {
 Edge::Edge() {
         this->v1 = NULL;
         this->v2 = NULL;
+   
 }
 
 Edge::Edge(Vector3f *v1, Vector3f *v2) {
@@ -196,6 +200,15 @@ Grid::Grid(Vector3f center, Vector3f step, Vector3f gridMax, float (*func)(Vecto
         }
 }
 
+
+Vector3f getNormal(Vector3f v1, Vector3f v2, Vector3f v3){
+    Vector3f v13 = v1 - v3; 
+    Vector3f v23 = v2 - v3; 
+    
+    //return (RtimesSinv * v13.crossProduct(v23)).normalize();
+    return v13.cross(v23).normalized();
+}
+
 void Tetrahedron::draw() {
         counter++;
         if (drawTets) {
@@ -250,8 +263,16 @@ void Tetrahedron::draw() {
                 } else {
                         glBegin(GL_TRIANGLES);
                 }
+            
+             
+                Vector3f n = getNormal(cutpoints[0], cutpoints[1], cutpoints[2]); 
+                if(n.dot(tempNormal) < 0) n = -n; 
+                
+                glNormal3f(n(0), n(1), n(2)); 
                 glVertex3f(cutpoints[0](0), cutpoints[0](1), cutpoints[0](2));
+                  glNormal3f(n(0), n(1), n(2));
                 glVertex3f(cutpoints[1](0), cutpoints[1](1), cutpoints[1](2));
+                  glNormal3f(n(0), n(1), n(2));
                 glVertex3f(cutpoints[2](0), cutpoints[2](1), cutpoints[2](2));
                 glEnd();
         } else if (CPC == 4) {
@@ -269,12 +290,24 @@ void Tetrahedron::draw() {
                         glEnd();
                 } else {
                         glBegin(GL_TRIANGLES);
+                        Vector3f n = getNormal(cutpoints[0], cutpoints[1], cutpoints[2]); 
+                        if(n.dot(tempNormal) < 0) n = -n; 
+                
+                        glNormal3f(n(0), n(1), n(2)); 
                         glVertex3f(cutpoints[0](0), cutpoints[0](1), cutpoints[0](2));
+                        glNormal3f(n(0), n(1), n(2)); 
                         glVertex3f(cutpoints[1](0), cutpoints[1](1), cutpoints[1](2));
+                        glNormal3f(n(0), n(1), n(2)); 
                         glVertex3f(cutpoints[2](0), cutpoints[2](1), cutpoints[2](2));
 
-                        glVertex3f(cutpoints[3](0), cutpoints[3](1), cutpoints[3](2));        
+                        n = getNormal(cutpoints[1], cutpoints[2], cutpoints[3]); 
+                        if(n.dot(tempNormal) < 0) n = -n; 
+                
+                        glNormal3f(n(0), n(1), n(2)); 
+                        glVertex3f(cutpoints[3](0), cutpoints[3](1), cutpoints[3](2));     
+                        glNormal3f(n(0), n(1), n(2));
                         glVertex3f(cutpoints[1](0), cutpoints[1](1), cutpoints[1](2));
+                        glNormal3f(n(0), n(1), n(2));
                         glVertex3f(cutpoints[2](0), cutpoints[2](1), cutpoints[2](2));
                         glEnd();
                 }                
