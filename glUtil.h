@@ -39,7 +39,7 @@ using namespace std;
 
 #define MIN_FLOAT 1e-37f
 #define limit 11
-#define epsilon 0.001f
+#define epsilon 0.0001f
 
 typedef pair<Vector3f*, Vector3f*> PairVecP;
 

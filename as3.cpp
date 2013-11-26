@@ -17,7 +17,6 @@ HeightMap h;
 void initializeDensityFunction(){
     h = HeightMap(100); 
     h.addPerlinNoise(20); 
-    //h.perturb(16, 16); 
     for(int i = 0; i < 10; i++) h.erode(16); 
     h.smoothen(); 
   
@@ -26,7 +25,7 @@ void initializeDensityFunction(){
 float density(Vector3f point) {
     int x = point[0]*10 + 40;  
     int y = point[2]*10 + 40; 
-    float height = h.heights[x * 100 + y]/250; 
+    float height = h.heights[x * 100 + y]/200; 
     
     
     //int x = (int)floorf((point[0] + 4)/8 * 64);
@@ -39,20 +38,21 @@ float density(Vector3f point) {
 // Global Variables
 //****************************************************
 Viewport viewport;
-
+Vector3f gridMax = Vector3f(4, 4, 4); 
+Vector3f stepsize = Vector3f(.1, .1, .1); 
 
 Grid *grid;
 float ustep, vstep, error, max_z = 0, focus = 60;
 float rotUD = 0, rotLR = 0, rotQE = 0, ytrans = 0, xtrans = 0, ztrans = 0;
 bool flat, wireframe, adaptive, drawTets;
-GLfloat mat_specular[] = {1.0f, 0.8f, 0.8f, 0.0f};
+GLfloat mat_specular[] = {0.8f, 0.8f, 0.8f, 0.0f};
 GLfloat mat_shininess[] = {128.0f};
-GLfloat mat_ambient[] = {0.1f, 0.1f, 0.1f, 0.0f};
-GLfloat mat_diffusion[] = {0.95f, 0.95f, 0.95f, 0.0f};
-GLfloat light_position[] = {5.0f, 5.0f, 5.0f, 1.0f};
-GLfloat light_diffuse[] = {0.0f, 0.3f, 0.5f, 1.0f};
-GLfloat light_specular[] = {1.0f, 1.0f, 0.0f, 0.0f};
-GLfloat light_ambient[] = {0.1f, 0.1f, 0.1f, 0.0f};
+GLfloat mat_ambient[] = {0.0f, 0.3f, 0.0f, 1.0f};
+GLfloat mat_diffusion[] = {0.0f, 0.3f, 0.0f, 1.0f};
+GLfloat light_position[] = {5.0f, 1.0f, 5.0f, 1.0f};
+GLfloat light_diffuse[] = {.3f, 0.5f, 0.2f, 1.0f};
+GLfloat light_specular[] = {0.0f, 0.0f, 0.0f, 0.0f};
+GLfloat light_ambient[] = {0.0f, 0.0f, 0.0f, 1.0f};
 
 //****************************************************
 // GLUT and Initialization Functions
@@ -217,7 +217,7 @@ int main(int argc, char* argv[]) {
 
     initializeDensityFunction(); 
     //test(); 
-	grid = new Grid(Vector3f(0, 0, 0), Vector3f(.1, .1, .1), Vector3f(4, 4, 4), density);
+	grid = new Grid(Vector3f(0, 0, 0), stepsize, gridMax, density);
 
 	wireframe = false;
 	drawTets = false;
@@ -237,21 +237,23 @@ int main(int argc, char* argv[]) {
 	glLoadIdentity();
 
 
-	//glEnable(GL_DEPTH_TEST);
-	//glEnable(GL_COLOR_MATERIAL);
-	//glEnable(GL_LIGHTING);
-	//glEnable(GL_LIGHT0);
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_COLOR_MATERIAL);
+	glEnable(GL_LIGHTING);
+	glEnable(GL_LIGHT0);
+    glEnable(GL_NORMALIZE); 
+   
 
-	//glShadeModel(GL_SMOOTH);
-	//glMaterialfv(GL_FRONT, GL_AMBIENT, mat_ambient);
-	//glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffusion);
-	//glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
-	//glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
+	glShadeModel(GL_FLAT);
+	glMaterialfv(GL_FRONT, GL_AMBIENT, mat_ambient);
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffusion);
+	glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
+	glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
 
-	//glLightfv(GL_LIGHT0, GL_POSITION, light_position);
-	//glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
-	//glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
-	//glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
+	glLightfv(GL_LIGHT0, GL_POSITION, light_position);
+	glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
+	glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
 	
 	glutDisplayFunc(display);
 	glutReshapeFunc(reshape);
