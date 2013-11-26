@@ -38,10 +38,10 @@ bool Edge::findCP(float (*f)(Vector3f), Vector3f &intersection) {
         bool v1nt = (v1d < 0);
         bool v2nt = (v2d < 0);
         if ((v1pt&&v2pt)||(v2nt&&v1nt)) {
-                return false;
+            return false;
         } else {
-                intersection = bisection(f, *v1, *v2);
-                return true;
+            intersection = *v1 + (*v2 - *v1)*(-v1d / (v2d - v1d));
+			return true;
         }
 }
 
@@ -88,27 +88,56 @@ Tetrahedron::Tetrahedron(Vector3f *v1, Vector3f *v2, Vector3f *v3, Vector3f *v4,
         Vector3f cp12, cp13, cp14, cp23, cp24, cp34;
         CPC = 0;
         //bool z1, z2, z3, z4, z5, z6;
-        if (grid->edges[PairVecP(v1, v2)].findCP(grid->func, cp12)) {
+        bool v1zero = abs(grid->func(*v1)) < 1e-35f;
+		bool v2zero = abs(grid->func(*v2)) < 1e-35f;
+		bool v3zero = abs(grid->func(*v3)) < 1e-35f;
+		bool v4zero = abs(grid->func(*v4)) < 1e-35f;
+		int counter = 0;
+		if (v1zero) {
+			cutpoints[CPC] = *v1;
+			CPC++;
+			counter++;
+		} 
+		if (v2zero) {
+			cutpoints[CPC] = *v2;
+			CPC++;
+			counter++;
+		}
+		if (v3zero) {
+			cutpoints[CPC] = *v3;
+			CPC++;
+			counter++;
+		}
+		if (v4zero) {
+			cutpoints[CPC] = *v4;
+			CPC++;
+			counter++;
+		}
+		if (counter > 0) {
+			cout << counter << endl;
+			fflush(stdout);
+		}
+        if ((grid->edges[PairVecP(v1, v2)].findCP(grid->func, cp12)) && (!v1zero) && (!v2zero)) {
                 cutpoints[CPC] = cp12;
                 CPC++;
         }
-        if (grid->edges[PairVecP(v1, v3)].findCP(grid->func, cp13)) {
+        if ((grid->edges[PairVecP(v1, v3)].findCP(grid->func, cp13)) && (!v1zero) && (!v3zero)) {
                 cutpoints[CPC] = cp13;
                 CPC++;
         }
-        if (grid->edges[PairVecP(v1, v4)].findCP(grid->func, cp14)) {
+        if ((grid->edges[PairVecP(v1, v4)].findCP(grid->func, cp14)) && (!v1zero) && (!v4zero)) {
                 cutpoints[CPC] = cp14;
                 CPC++;
         }
-        if (grid->edges[PairVecP(v2, v3)].findCP(grid->func, cp23)) {
+        if ((grid->edges[PairVecP(v2, v3)].findCP(grid->func, cp23)) && (!v2zero) && (!v3zero)) {
                 cutpoints[CPC] = cp23;
                 CPC++;
         }
-        if (grid->edges[PairVecP(v2, v4)].findCP(grid->func, cp24)) {
+        if ((grid->edges[PairVecP(v2, v4)].findCP(grid->func, cp24)) && (!v2zero) && (!v4zero)) {
                 cutpoints[CPC] = cp24;
                 CPC++;
         }
-        if (grid->edges[PairVecP(v3, v4)].findCP(grid->func, cp34)) {
+        if ((grid->edges[PairVecP(v3, v4)].findCP(grid->func, cp34)) && (!v3zero) && (!v4zero)) {
                 cutpoints[CPC] = cp34;
                 CPC++;
         }                                        
@@ -128,15 +157,15 @@ Grid::Grid(Vector3f center, Vector3f step, Vector3f gridMax, float (*func)(Vecto
                         }
                 }
         }
-//        6       7         
+//   		     6       7         
 //              +------+
 //          5 .'|  8 .'|
 //          +---+--+'  |
-//    |   |  |   |           Vertices as labelled
-//    |  2+--+---+3
-//           | .'   | .'
-//           +------+'
-//    1       4
+//    		|   |  |   |           Vertices as labelled
+//    		|  2+--+---+3
+//  		| .'   | .'
+//  		+------+'
+//    		1       4
 
         for (int i = 0; i < numSteps(0)-1; i++) {
                 for (int j = 0; j < numSteps(1)-1; j++) {
