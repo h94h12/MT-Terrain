@@ -16,22 +16,23 @@ HeightMap h;
 
 void initializeDensityFunction(){
     h = HeightMap(100); 
-    h.addPerlinNoise(20); 
-    for(int i = 0; i < 10; i++) h.erode(16); 
-    h.smoothen(); 
+    h.addPerlinNoise(10); 
+   // for(int i = 0; i < 10; i++) h.erode(16); 
+   // h.smoothen(); 
   
 }
 
 float density(Vector3f point) {
-    int x = point[0]*10 + 40;  
-    int y = point[2]*10 + 40; 
-    float height = h.heights[x * 100 + y]/200; 
-    
-    
-    //int x = (int)floorf((point[0] + 4)/8 * 64);
-    //int z = (int)floorf((point[2] + 4)/8 * 64);
-    //float height = (h.heights[x * 64 + z])/200 * 3;  
-    return height - point[1]; 
+   int x = point[0]*10 + 40;  
+   int y = point[2]*10 + 40; 
+   float height = h.heights[x * 100 + y]/(float)250;
+   return point[1] - height; 
+   
+    //return point[0]*point[0] +  point[1]*point[1] + point[2]*point[2] - 0.3; 
+   
+   //return pow(1 - sqrt(point[0]*point[0] + point[1]*point[1]), 2) + point[2]*point[2] - 0.2; 
+   
+
 }
 
 //****************************************************
@@ -39,7 +40,7 @@ float density(Vector3f point) {
 //****************************************************
 Viewport viewport;
 Vector3f gridMax = Vector3f(4, 4, 4); 
-Vector3f stepsize = Vector3f(.1, .1, .1); 
+Vector3f stepsize = Vector3f(0.1, 0.1, 0.1); 
 
 Grid *grid;
 float ustep, vstep, error, max_z = 0, focus = 60;
@@ -47,39 +48,100 @@ float rotUD = 0, rotLR = 0, rotQE = 0, ytrans = 0, xtrans = 0, ztrans = 0;
 bool flat, wireframe, adaptive, drawTets;
 GLfloat mat_specular[] = {0.8f, 0.8f, 0.8f, 0.0f};
 GLfloat mat_shininess[] = {128.0f};
-GLfloat mat_ambient[] = {0.0f, 0.3f, 0.0f, 1.0f};
+GLfloat mat_ambient[] = {0.0f, 0.4f, 0.0f, 1.0f};
 GLfloat mat_diffusion[] = {0.0f, 0.3f, 0.0f, 1.0f};
-GLfloat light_position[] = {5.0f, 1.0f, 5.0f, 1.0f};
-GLfloat light_diffuse[] = {.3f, 0.5f, 0.2f, 1.0f};
+GLfloat light_position[] = {3.0f, 1.0f, 3.0f, 1.0f};
+GLfloat light_diffuse[] = {.3f, 0.6f, 0.2f, 1.0f};
 GLfloat light_specular[] = {0.0f, 0.0f, 0.0f, 0.0f};
-GLfloat light_ambient[] = {0.0f, 0.0f, 0.0f, 1.0f};
+GLfloat light_ambient[] = {0.3f, 0.3f, 0.3f, 1.0f};
+
+
 
 //****************************************************
 // GLUT and Initialization Functions
 //****************************************************
 
 void reshape(int w, int h) {
-	viewport.w = w;
-	viewport.h = h;
+	  glViewport(0, 0, (GLsizei) w, (GLsizei) h);
+}
 
-	glViewport(0, 0, w, h);
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	gluPerspective(focus, (GLfloat) w/ (GLfloat) h, 1.0, 40.0);
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-	gluLookAt(0, 0, 5, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+void accFrustum(GLdouble left, GLdouble right, GLdouble bottom,
+    GLdouble top, GLdouble near, GLdouble far, GLdouble pixdx, 
+    GLdouble pixdy, GLdouble eyedx, GLdouble eyedy, 
+    GLdouble focus)
+{
+    GLdouble xwsize, ywsize; 
+    GLdouble dx, dy;
+    GLint viewport[4];
+
+    glGetIntegerv (GL_VIEWPORT, viewport);
+
+    xwsize = right - left;
+    ywsize = top - bottom;
+    dx = -(pixdx*xwsize/(GLdouble) viewport[2] + 
+            eyedx*near/focus);
+    dy = -(pixdy*ywsize/(GLdouble) viewport[3] + 
+            eyedy*near/focus);
+
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glFrustum (left + dx, right + dx, bottom + dy, top + dy, 
+        near, far);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+
+    glTranslatef (-eyedx, -eyedy, 0.0);
+   
+    
+}
+
+void accPerspective(GLdouble fovy, GLdouble aspect, 
+    GLdouble near, GLdouble far, GLdouble pixdx, GLdouble pixdy, 
+    GLdouble eyedx, GLdouble eyedy, GLdouble focus)
+{
+    GLdouble fov2,left,right,bottom,top;
+    fov2 = ((fovy*M_PI) / 180.0) / 2.0;
+
+    top = near / (cos(fov2) / sin(fov2));
+    bottom = -top;
+    right = top * aspect;
+    left = -right;
+
+    accFrustum (left, right, bottom, top, near, far,
+        pixdx, pixdy, eyedx, eyedy, focus);
 }
 
 void display(void) {
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	//if (flat) {
-	//	glShadeModel(GL_FLAT);
-	//} else {
-	//	glShadeModel(GL_SMOOTH);
-	//}
-
+    int jitter; 
+    GLint vp[4]; 
+    /*float j8[16] = {-0.334818,  0.435331, 
+                    0.286438, -0.393495,
+                    0.459462,  0.141540,
+                    -0.414498, -0.192829,
+                    -0.183790,  0.082102,
+                    -0.079263, -0.317383,
+                    0.102254,  0.299133,
+                    0.164216, -0.054399}; */
+    float j8[6] = {-0.373411, -0.250550,
+                    0.256263,  0.368119,
+                    0.117148, -0.117570}; 
+    
+    
+    
+    glGetIntegerv(GL_VIEWPORT, vp); 
+    glClear(GL_ACCUM_BUFFER_BIT);
+    
+    for(jitter = 0; jitter < 3; jitter++){
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+         accPerspective (45.0, 
+         (GLdouble) vp[2]/(GLdouble) vp[3], 
+         0.1, 50.0, 0.0, 0.0,
+         0.01*j8[jitter * 2], 0.01*j8[jitter * 2 + 1], 10.0);
+        
+    //do usual rendering
+    
+     
+    
 	glPushMatrix();
 	glTranslatef(xtrans, ytrans, ztrans);
 	glRotatef(rotUD, 1, 0, 0);
@@ -87,7 +149,13 @@ void display(void) {
 	glRotatef(rotQE, 0, 0, 1);
 	grid->draw();
 	glPopMatrix();
-	glutSwapBuffers();
+    
+    glAccum(GL_ACCUM, 0.33); 
+    
+    }
+    glAccum(GL_RETURN, 1.0); 
+    glFlush(); 
+
 }
 
 void idle (void) {
@@ -208,33 +276,15 @@ void test(){
     }
 }
 
-int main(int argc, char* argv[]) {
-	viewport.h = 800;
+void initialize(){
+    viewport.h = 800;
 	viewport.w = 800;
     
-
-    
-
     initializeDensityFunction(); 
-    //test(); 
 	grid = new Grid(Vector3f(0, 0, 0), stepsize, gridMax, density);
 
 	wireframe = false;
 	drawTets = false;
-
-	glutInit(&argc, argv);
-	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
-	glutInitWindowSize(viewport.w, viewport.h);
-	glutInitWindowPosition(0,0);
-	glutCreateWindow("Final Project");
-	
-	glClearColor(0, 0, 0, 0);
-	
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	gluPerspective(60.0, (float)viewport.w/(float)viewport.h, 1.0, 40.0);
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
 
 
 	glEnable(GL_DEPTH_TEST);
@@ -242,7 +292,7 @@ int main(int argc, char* argv[]) {
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
     glEnable(GL_NORMALIZE); 
-   
+    
 
 	glShadeModel(GL_FLAT);
 	glMaterialfv(GL_FRONT, GL_AMBIENT, mat_ambient);
@@ -254,7 +304,29 @@ int main(int argc, char* argv[]) {
 	glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
 	glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
 	glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
-	
+    
+    
+	/*glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	gluPerspective(60.0, (float)viewport.w/(float)viewport.h, 1.0, 40.0);
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();*/
+
+    
+
+}
+
+int main(int argc, char* argv[]) {
+
+    initialize(); 
+
+	glutInit(&argc, argv);
+	glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB | GLUT_DEPTH | GLUT_ACCUM);
+	glutInitWindowSize(viewport.w, viewport.h);
+	glutInitWindowPosition(0,0);
+	glutCreateWindow("Final Project");
+	initialize(); 
+
 	glutDisplayFunc(display);
 	glutReshapeFunc(reshape);
 	glutKeyboardFunc(keyboard);

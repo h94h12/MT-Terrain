@@ -28,6 +28,7 @@
 #include <math.h>
 
 #include "primitives.h"
+#include "terrain.h"
 
 
 
@@ -64,8 +65,8 @@ float trans_z = -10;
 
 float cubesize = 0.1; 
 
-float epsilon = 0.1; 
-int limit = 10; //limit iterations for bisection
+float epsilon = 0.0000001; 
+int limit = 15; //limit iterations for bisection
 
 //Vertex Normals
 Vector TOP = Vector(0, 1, 0); 
@@ -77,23 +78,30 @@ Vector BACK = Vector(0, 0, -1);
 Vector DIAG_BACK = Vector(1, 0, -1); 
 Vector DIAG_FRONT = Vector(-1, 0, 1); 
 
-
+HeightMap h; 
 
 //****************************************************
 // Implicit Functions
 //****************************************************
 bool function(float x, float y, float z){
-    if (x*x + y*y + z*z - 0.5 < 0)
-        return 0;
-    return 1;
+   int x1 = x*10 + 40;  
+   int y1 = z*10 + 40; 
+   float height = h.heights[x1 * 100 + y1]/(float)200;
+   return (y - height) >= 0; 
+   //return x*x + y*y + z*z - 1 >= 0; 
+}
+bool function(float x, float y, float z, float e){
+   int x1 = x*10 + 40;  
+   int y1 = z*10 + 40; 
+   float height = h.heights[x1 * 100 + y1]/(float)200;
+   return (y - height) >= e; 
+   //return x*x + y*y + z*z >= e; 
 }
 bool function(Point p){
     return function(p.x, p.y, p.z); 
 }
 bool closeEnough(Point p){
-    if(p.x * p.x + p.y * p.y + p.z * p.z - 0.5 < epsilon)
-        return true;
-    return false; 
+    return function(p.x, p.y, p.z, epsilon); 
 }
 
 //****************************************************
@@ -104,7 +112,7 @@ map<Edge, float> cutpoints;
 
 
 bool checkTet(bool a, bool b, bool c, bool d){
-    if(!(a ^ b) && !(b ^ c) && !(c ^ d))
+    if(!(a ^ b) && !(b ^ c) && !(c ^ d) && !(a^d))
         return false; 
     return true; 
     
@@ -141,11 +149,12 @@ void getTri(Vertex v0, Vertex v1, Vertex v2, Vertex v3){
         tripoints.push_back(bisection(v2.point, v3.point, 0));
     }
     
-    if(tripoints.size() >= 3)
+    if(tripoints.size() >= 3){
         tris.push_back(Triangle(tripoints[0], tripoints[1], tripoints[2])); 
-    else if(tripoints.size() == 4)
+    if(tripoints.size() == 4)
         tris.push_back(Triangle(tripoints[0], tripoints[2], tripoints[3])); 
-    
+            
+    }
  //TO DO: GET NORMALS
 }
 
@@ -180,11 +189,11 @@ void initializeLookupTable(){
 
 
 void polygonize(){
-    initializeLookupTable(); 
+    //initializeLookupTable(); 
     
-    for(float z = -1; z < 1 - cubesize; z += cubesize){
-        for(float y = -1; y < 1 - cubesize; y += cubesize){
-            for(float x = -1; x < 1 - cubesize; x += cubesize){
+    for(float z = -4; z <= 4 - cubesize; z += 0.05){
+        for(float y = -4; y <= 4 - cubesize; y += 0.05){
+            for(float x = -4; x <= 4 - cubesize; x += 0.05){
                 
                 //TO DO:
                 //update hashtable
@@ -343,7 +352,8 @@ void myFrameMove() {
 //****************************************************
 int main(int argc, char *argv[]) {
 	
- 
+        h = HeightMap(100); 
+        h.addPerlinNoise(10); 
 	    polygonize(); 
     
     

@@ -1,6 +1,7 @@
 #include "glUtil.h"
 
 int counter = 0;
+Vector3f tempNormal = Vector3f(0, 1, 0); 
 
 bool std::operator==(const PairVecP &l, const PairVecP &r) {
         return ((l.first==r.first)&&(l.second==r.second))||((l.first==r.second)&&(l.second==r.first));
@@ -41,6 +42,7 @@ bool Edge::findCP(float (*f)(Vector3f), Vector3f &intersection) {
             return false;
         } else {
             intersection = *v1 + (*v2 - *v1)*(-v1d / (v2d - v1d));
+            //intersection = bisection(f, *v1, *v2); 
 			return true;
         }
 }
@@ -56,17 +58,17 @@ Vector3f Edge::bisection(float (*f)(Vector3f), Vector3f left, Vector3f right) {
     	return right;
     } else if (midV >= 0) {
         if (leftV >= 0) {
-        	fflush(stdout);
+        	//fflush(stdout);
         	return bisection(f, mid, right);
         } else {
-        	fflush(stdout);
+        	//fflush(stdout);
         	return bisection(f, left, mid);
         }
     } else {
      	if (leftV >= 0) {
           	return bisection(f, left, mid);
         } else {
-    		fflush(stdout);            	
+    		//fflush(stdout);            	
         	return bisection(f, mid, right);
         }
     }
@@ -92,6 +94,7 @@ Tetrahedron::Tetrahedron(Vector3f *v1, Vector3f *v2, Vector3f *v3, Vector3f *v4,
 		bool v2zero = abs(grid->func(*v2)) < 1e-35f;
 		bool v3zero = abs(grid->func(*v3)) < 1e-35f;
 		bool v4zero = abs(grid->func(*v4)) < 1e-35f;
+        
 		int counter = 0;
 		if (v1zero) {
 			cutpoints[CPC] = *v1;
@@ -114,8 +117,8 @@ Tetrahedron::Tetrahedron(Vector3f *v1, Vector3f *v2, Vector3f *v3, Vector3f *v4,
 			counter++;
 		}
 		if (counter > 0) {
-			cout << counter << endl;
-			fflush(stdout);
+			//cout << counter << endl;
+			//fflush(stdout);
 		}
         if ((grid->edges[PairVecP(v1, v2)].findCP(grid->func, cp12)) && (!v1zero) && (!v2zero)) {
                 cutpoints[CPC] = cp12;
@@ -167,9 +170,9 @@ Grid::Grid(Vector3f center, Vector3f step, Vector3f gridMax, float (*func)(Vecto
 //  		+------+'
 //    		1       4
 
-        for (int i = 0; i < numSteps(0)-1; i++) {
-                for (int j = 0; j < numSteps(1)-1; j++) {
-                        for (int k = 0; k < numSteps(2)-1; k++) {
+        for (float i = 0; i < numSteps(0)-1; i++) {
+                for (float j = 0; j < numSteps(1)-1; j++) {
+                        for (float k = 0; k < numSteps(2)-1; k++) {
                                 int ic = numSteps(1)*numSteps(2);
                                 int jc = numSteps(2);
 
@@ -225,6 +228,14 @@ Grid::Grid(Vector3f center, Vector3f step, Vector3f gridMax, float (*func)(Vecto
         }
 }
 
+Vector3f getNormal(Vector3f v1, Vector3f v2, Vector3f v3){
+    Vector3f v13 = v1 - v3; 
+    Vector3f v23 = v2 - v3; 
+    
+    //return (RtimesSinv * v13.crossProduct(v23)).normalize();
+    return v13.cross(v23).normalized();
+}
+
 void Tetrahedron::draw() {
         counter++;
         if (drawTets) {
@@ -276,11 +287,21 @@ void Tetrahedron::draw() {
         } else if (CPC == 3) {
                 if (wireframe) {
                         glBegin(GL_LINE_LOOP);
+                
                 } else {
                         glBegin(GL_TRIANGLES);
+    
                 }
+            
+             
+                Vector3f n = getNormal(cutpoints[0], cutpoints[1], cutpoints[2]); 
+                if(n.dot(tempNormal) < 0) n = -n; 
+                
+                glNormal3f(n(0), n(1), n(2)); 
                 glVertex3f(cutpoints[0](0), cutpoints[0](1), cutpoints[0](2));
+                  glNormal3f(n(0), n(1), n(2));
                 glVertex3f(cutpoints[1](0), cutpoints[1](1), cutpoints[1](2));
+                  glNormal3f(n(0), n(1), n(2));
                 glVertex3f(cutpoints[2](0), cutpoints[2](1), cutpoints[2](2));
                 glEnd();
         } else if (CPC == 4) {
@@ -298,17 +319,30 @@ void Tetrahedron::draw() {
                         glEnd();
                 } else {
                         glBegin(GL_TRIANGLES);
+                        Vector3f n = getNormal(cutpoints[0], cutpoints[1], cutpoints[2]); 
+                        if(n.dot(tempNormal) < 0) n = -n; 
+                
+                        glNormal3f(n(0), n(1), n(2)); 
                         glVertex3f(cutpoints[0](0), cutpoints[0](1), cutpoints[0](2));
+                        glNormal3f(n(0), n(1), n(2)); 
                         glVertex3f(cutpoints[1](0), cutpoints[1](1), cutpoints[1](2));
+                        glNormal3f(n(0), n(1), n(2)); 
                         glVertex3f(cutpoints[2](0), cutpoints[2](1), cutpoints[2](2));
 
-                        glVertex3f(cutpoints[3](0), cutpoints[3](1), cutpoints[3](2));        
+                        n = getNormal(cutpoints[1], cutpoints[2], cutpoints[3]); 
+                        if(n.dot(tempNormal) < 0) n = -n; 
+                
+                        glNormal3f(n(0), n(1), n(2)); 
+                        glVertex3f(cutpoints[3](0), cutpoints[3](1), cutpoints[3](2));     
+                        glNormal3f(n(0), n(1), n(2));
                         glVertex3f(cutpoints[1](0), cutpoints[1](1), cutpoints[1](2));
+                        glNormal3f(n(0), n(1), n(2));
                         glVertex3f(cutpoints[2](0), cutpoints[2](1), cutpoints[2](2));
                         glEnd();
                 }                
         }
 }
+
 
 void Grid::draw() {
         for (vector<Tetrahedron>::iterator it = tets.begin(); it != tets.end(); ++it) {
