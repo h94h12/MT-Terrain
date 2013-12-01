@@ -17,15 +17,15 @@ HeightMap h;
 void initializeDensityFunction(){
     h = HeightMap(100); 
     h.addPerlinNoise(10); 
-   // for(int i = 0; i < 10; i++) h.erode(16); 
-   // h.smoothen(); 
+    //for(int i = 0; i < 10; i++) h.erode(16); 
+    //h.smoothen(); 
   
 }
 
 float density(Vector3f point) {
    int x = point[0]*10 + 40;  
    int y = point[2]*10 + 40; 
-   float height = h.heights[x * 100 + y]/(float)250;
+   float height = h.heights[x * 100 + y]/(float)200;
    return point[1] - height; 
    
     //return point[0]*point[0] +  point[1]*point[1] + point[2]*point[2] - 0.3; 
@@ -39,8 +39,8 @@ float density(Vector3f point) {
 // Global Variables
 //****************************************************
 Viewport viewport;
-Vector3f gridMax = Vector3f(4, 4, 4); 
-Vector3f stepsize = Vector3f(0.1, 0.1, 0.1); 
+Vector3f gridMax = Vector3f(4, 4, 8); 
+Vector3f stepsize = Vector3f(0.1, 0.2, 0.1); 
 
 Grid *grid;
 float ustep, vstep, error, max_z = 0, focus = 60;
@@ -48,12 +48,12 @@ float rotUD = 0, rotLR = 0, rotQE = 0, ytrans = 0, xtrans = 0, ztrans = 0;
 bool flat, wireframe, adaptive, drawTets;
 GLfloat mat_specular[] = {0.8f, 0.8f, 0.8f, 0.0f};
 GLfloat mat_shininess[] = {128.0f};
-GLfloat mat_ambient[] = {0.0f, 0.4f, 0.0f, 1.0f};
+GLfloat mat_ambient[] = {0.0f, 0.3f, 0.0f, 1.0f};
 GLfloat mat_diffusion[] = {0.0f, 0.3f, 0.0f, 1.0f};
-GLfloat light_position[] = {3.0f, 1.0f, 3.0f, 1.0f};
-GLfloat light_diffuse[] = {.3f, 0.6f, 0.2f, 1.0f};
+GLfloat light_position[] = {5.0f, 1.0f, 5.0f, 1.0f};
+GLfloat light_diffuse[] = {.3f, 0.5f, 0.2f, 1.0f};
 GLfloat light_specular[] = {0.0f, 0.0f, 0.0f, 0.0f};
-GLfloat light_ambient[] = {0.3f, 0.3f, 0.3f, 1.0f};
+GLfloat light_ambient[] = {0.0f, 0.0f, 0.0f, 1.0f};
 
 
 
@@ -62,7 +62,16 @@ GLfloat light_ambient[] = {0.3f, 0.3f, 0.3f, 1.0f};
 //****************************************************
 
 void reshape(int w, int h) {
-	  glViewport(0, 0, (GLsizei) w, (GLsizei) h);
+	   viewport.w = w;
+        viewport.h = h;
+
+        glViewport(0, 0, w, h);
+        glMatrixMode(GL_PROJECTION);
+        glLoadIdentity();
+        gluPerspective(focus, (GLfloat) w/ (GLfloat) h, 1.0, 40.0);
+        glMatrixMode(GL_MODELVIEW);
+        glLoadIdentity();
+        gluLookAt(0, 0, 5, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
 }
 
 void accFrustum(GLdouble left, GLdouble right, GLdouble bottom,
@@ -112,7 +121,8 @@ void accPerspective(GLdouble fovy, GLdouble aspect,
 }
 
 void display(void) {
-    int jitter; 
+    
+ int jitter; 
     GLint vp[4]; 
     /*float j8[16] = {-0.334818,  0.435331, 
                     0.286438, -0.393495,
@@ -133,14 +143,14 @@ void display(void) {
     
     for(jitter = 0; jitter < 3; jitter++){
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-         accPerspective (45.0, 
+         accPerspective (90.0, 
          (GLdouble) vp[2]/(GLdouble) vp[3], 
          0.1, 50.0, 0.0, 0.0,
-         0.01*j8[jitter * 2], 0.01*j8[jitter * 2 + 1], 10.0);
+         0.03*j8[jitter * 2], 0.03*j8[jitter * 2 + 1], 5.0);
         
     //do usual rendering
     
-     
+        gluLookAt(0, 0, 3, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
     
 	glPushMatrix();
 	glTranslatef(xtrans, ytrans, ztrans);
@@ -149,12 +159,11 @@ void display(void) {
 	glRotatef(rotQE, 0, 0, 1);
 	grid->draw();
 	glPopMatrix();
-    
-    glAccum(GL_ACCUM, 0.33); 
-    
+     glAccum(GL_ACCUM, 0.33); 
     }
-    glAccum(GL_RETURN, 1.0); 
+        glAccum(GL_RETURN, 1.0); 
     glFlush(); 
+    glutSwapBuffers(); 
 
 }
 
@@ -306,11 +315,11 @@ void initialize(){
 	glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
     
     
-	/*glMatrixMode(GL_PROJECTION);
+	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	gluPerspective(60.0, (float)viewport.w/(float)viewport.h, 1.0, 40.0);
 	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();*/
+	glLoadIdentity();
 
     
 
@@ -321,7 +330,7 @@ int main(int argc, char* argv[]) {
     initialize(); 
 
 	glutInit(&argc, argv);
-	glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB | GLUT_DEPTH | GLUT_ACCUM);
+	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_ACCUM);
 	glutInitWindowSize(viewport.w, viewport.h);
 	glutInitWindowPosition(0,0);
 	glutCreateWindow("Final Project");
