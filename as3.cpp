@@ -55,6 +55,8 @@ GLfloat light_diffuse[] = {.3f, 0.5f, 0.2f, 1.0f};
 GLfloat light_specular[] = {0.0f, 0.0f, 0.0f, 0.0f};
 GLfloat light_ambient[] = {0.0f, 0.0f, 0.0f, 1.0f};
 
+GLint fogMode; 
+
 
 
 //****************************************************
@@ -222,7 +224,22 @@ void keyboard(unsigned char key, int x, int y) {
 	switch (key) {
     case '1':
        dof = !dof; break;     
-    
+    case 'f':
+         if (fogMode == GL_EXP) {
+            fogMode = GL_EXP2;
+            printf ("Fog mode is GL_EXP2\n");
+         }
+         else if (fogMode == GL_EXP2) {
+            fogMode = GL_LINEAR;
+            printf ("Fog mode is GL_LINEAR\n");
+         }
+         else if (fogMode == GL_LINEAR) {
+            fogMode = GL_EXP;
+            printf ("Fog mode is GL_EXP\n");
+         }
+         glFogi (GL_FOG_MODE, fogMode);
+         glutPostRedisplay();
+         break;
     
 	case 's':
 		if (flat) {
@@ -321,6 +338,19 @@ void initialize(){
 	glEnable(GL_LIGHT0);
     glEnable(GL_NORMALIZE); 
     
+    glEnable(GL_FOG);
+   {
+      GLfloat fogColor[4] = {0.5, 0.5, 0.5, 1.0};
+
+      fogMode = GL_EXP;
+      glFogi (GL_FOG_MODE, fogMode);
+      glFogfv (GL_FOG_COLOR, fogColor);
+      glFogf (GL_FOG_DENSITY, 0.35);
+      glHint (GL_FOG_HINT, GL_DONT_CARE);
+      glFogf (GL_FOG_START, 1.0);
+      glFogf (GL_FOG_END, 5.0);
+   }
+   glClearColor(0.5, 0.5, 0.5, 1.0);  /* fog color */
 
 	glShadeModel(GL_FLAT);
 	glMaterialfv(GL_FRONT, GL_AMBIENT, mat_ambient);
