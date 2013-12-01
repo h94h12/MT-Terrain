@@ -43,9 +43,9 @@ Vector3f gridMax = Vector3f(4, 4, 8);
 Vector3f stepsize = Vector3f(0.1, 0.2, 0.1); 
 
 Grid *grid;
-float ustep, vstep, error, max_z = 0, focus = 60;
+float ustep, vstep, error, max_z = 0, focus = 45;
 float rotUD = 0, rotLR = 0, rotQE = 0, ytrans = 0, xtrans = 0, ztrans = 0;
-bool flat, wireframe, adaptive, drawTets;
+bool flat, wireframe, adaptive, drawTets, dof; 
 GLfloat mat_specular[] = {0.8f, 0.8f, 0.8f, 0.0f};
 GLfloat mat_shininess[] = {128.0f};
 GLfloat mat_ambient[] = {0.0f, 0.3f, 0.0f, 1.0f};
@@ -121,48 +121,62 @@ void accPerspective(GLdouble fovy, GLdouble aspect,
 }
 
 void display(void) {
-    
- int jitter; 
-    GLint vp[4]; 
-    /*float j8[16] = {-0.334818,  0.435331, 
-                    0.286438, -0.393495,
-                    0.459462,  0.141540,
-                    -0.414498, -0.192829,
-                    -0.183790,  0.082102,
-                    -0.079263, -0.317383,
-                    0.102254,  0.299133,
-                    0.164216, -0.054399}; */
-    float j8[6] = {-0.373411, -0.250550,
-                    0.256263,  0.368119,
-                    0.117148, -0.117570}; 
-    
-    
-    
-    glGetIntegerv(GL_VIEWPORT, vp); 
-    glClear(GL_ACCUM_BUFFER_BIT);
-    
-    for(jitter = 0; jitter < 3; jitter++){
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-         accPerspective (90.0, 
-         (GLdouble) vp[2]/(GLdouble) vp[3], 
-         0.1, 50.0, 0.0, 0.0,
-         0.03*j8[jitter * 2], 0.03*j8[jitter * 2 + 1], 5.0);
+    if(dof){
+        int jitter; 
+        GLint vp[4]; 
+        /*float j8[16] = {-0.334818,  0.435331, 
+                        0.286438, -0.393495,
+                        0.459462,  0.141540,
+                        -0.414498, -0.192829,
+                        -0.183790,  0.082102,
+                        -0.079263, -0.317383,
+                        0.102254,  0.299133,
+                        0.164216, -0.054399}; */
+        float j8[6] = {-0.373411, -0.250550,
+                        0.256263,  0.368119,
+                        0.117148, -0.117570}; 
         
-    //do usual rendering
-    
-        gluLookAt(0, 0, 3, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
-    
-	glPushMatrix();
-	glTranslatef(xtrans, ytrans, ztrans);
-	glRotatef(rotUD, 1, 0, 0);
-	glRotatef(rotLR, 0, 1, 0);
-	glRotatef(rotQE, 0, 0, 1);
-	grid->draw();
-	glPopMatrix();
-     glAccum(GL_ACCUM, 0.33); 
+        
+        
+        glGetIntegerv(GL_VIEWPORT, vp); 
+        glClear(GL_ACCUM_BUFFER_BIT);
+        
+        for(jitter = 0; jitter < 3; jitter++){
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+             accPerspective (45.0, 
+             (GLdouble) vp[2]/(GLdouble) vp[3], 
+             0.1, 50.0, 0.0, 0.0,
+             0.03*j8[jitter * 2], 0.03*j8[jitter * 2 + 1], 2.0);
+            
+        //do usual rendering
+        
+            gluLookAt(0, 0, 3, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+        
+        glPushMatrix();
+        glTranslatef(xtrans, ytrans, ztrans);
+        glRotatef(rotUD, 1, 0, 0);
+        glRotatef(rotLR, 0, 1, 0);
+        glRotatef(rotQE, 0, 0, 1);
+        grid->draw();
+        glPopMatrix();
+         glAccum(GL_ACCUM, 0.33); 
+        }
+            glAccum(GL_RETURN, 1.0); 
+        glFlush(); 
+        
     }
-        glAccum(GL_RETURN, 1.0); 
-    glFlush(); 
+    else{
+    
+         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glPushMatrix();
+        glTranslatef(xtrans, ytrans, ztrans);
+        glRotatef(rotUD, 1, 0, 0);
+        glRotatef(rotLR, 0, 1, 0);
+        glRotatef(rotQE, 0, 0, 1);
+        grid->draw();
+        glPopMatrix();
+
+    }
     glutSwapBuffers(); 
 
 }
@@ -206,6 +220,10 @@ void processSpecialKeys(int key, int x, int y) {
 
 void keyboard(unsigned char key, int x, int y) {
 	switch (key) {
+    case '1':
+       dof = !dof; break;     
+    
+    
 	case 's':
 		if (flat) {
 			flat = false;
@@ -294,6 +312,7 @@ void initialize(){
 
 	wireframe = false;
 	drawTets = false;
+    dof = false; 
 
 
 	glEnable(GL_DEPTH_TEST);
