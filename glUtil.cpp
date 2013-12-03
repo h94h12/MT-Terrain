@@ -1,4 +1,13 @@
 #include "glUtil.h"
+GLfloat mat_specular[] = {0.8f, 0.8f, 0.8f, 0.0f};
+GLfloat mat_shininess[] = {128.0f};
+GLfloat mat_ambient[] = {0.0f, 0.1f, 0.0f, 1.0f};
+GLfloat mat_diffusion[] = {0.0f, 0.3f, 0.0f, 1.0f};
+GLfloat light_position[] = {5.0f, 1.0f, 5.0f, 1.0f};
+GLfloat light_diffuse[] = {.3f, 0.5f, 0.2f, 1.0f};
+GLfloat light_specular[] = {0.0f, 0.0f, 0.0f, 0.0f};
+GLfloat light_ambient[] = {0.0f, 0.0f, 0.0f, 1.0f};
+
 
 int counter = 0;
 Vector3f tempNormal = Vector3f(0, 1, 0); 
@@ -345,7 +354,18 @@ void Tetrahedron::draw() {
 
 
 void Grid::draw() {
+
         for (vector<Tetrahedron>::iterator it = tets.begin(); it != tets.end(); ++it) {
+            	glShadeModel(GL_FLAT);
+	glMaterialfv(GL_FRONT, GL_AMBIENT, mat_ambient);
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffusion);
+	glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
+	glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
+
+	glLightfv(GL_LIGHT0, GL_POSITION, light_position);
+	glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
+	glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
                 it->draw();
         }
 }
