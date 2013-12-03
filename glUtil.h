@@ -38,8 +38,8 @@ using namespace std::tr1;
 using namespace std;
 
 #define MIN_FLOAT 1e-37f
-#define limit 11
-#define epsilon 0.0001f
+#define limit 20
+#define epsilon 0.000001f
 
 typedef pair<Vector3f*, Vector3f*> PairVecP;
 

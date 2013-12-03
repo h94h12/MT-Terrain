@@ -16,78 +16,183 @@ HeightMap h;
 
 void initializeDensityFunction(){
     h = HeightMap(100); 
-    h.addPerlinNoise(20); 
+    h.addPerlinNoise(10); 
     for(int i = 0; i < 10; i++) h.erode(16); 
     h.smoothen(); 
   
 }
 
 float density(Vector3f point) {
-    int x = point[0]*10 + 40;  
-    int y = point[2]*10 + 40; 
-    float height = h.heights[x * 100 + y]/200; 
-    
-    
-    //int x = (int)floorf((point[0] + 4)/8 * 64);
-    //int z = (int)floorf((point[2] + 4)/8 * 64);
-    //float height = (h.heights[x * 64 + z])/200 * 3;  
-    return height - point[1]; 
+   int x = point[0]*10 + 40;  
+   int y = point[2]*10 + 40; 
+   float height = h.heights[x * 100 + y]/(float)200;
+   return point[1] - height; 
+   
+    //return point[0]*point[0] +  point[1]*point[1] + point[2]*point[2] - 0.3; 
+   
+   //return pow(1 - sqrt(point[0]*point[0] + point[1]*point[1]), 2) + point[2]*point[2] - 0.2; 
+   
+
 }
 
 //****************************************************
 // Global Variables
 //****************************************************
 Viewport viewport;
-Vector3f gridMax = Vector3f(4, 4, 4); 
-Vector3f stepsize = Vector3f(.1, .1, .1); 
+Vector3f gridMax = Vector3f(5, 5, 5); 
+Vector3f stepsize = Vector3f(0.1, 0.1, 0.1); 
 
 Grid *grid;
-float ustep, vstep, error, max_z = 0, focus = 60;
+float ustep, vstep, error, max_z = 0, focus = 45;
 float rotUD = 0, rotLR = 0, rotQE = 0, ytrans = 0, xtrans = 0, ztrans = 0;
-bool flat, wireframe, adaptive, drawTets;
-GLfloat mat_specular[] = {0.8f, 0.8f, 0.8f, 0.0f};
-GLfloat mat_shininess[] = {128.0f};
-GLfloat mat_ambient[] = {0.0f, 0.3f, 0.0f, 1.0f};
-GLfloat mat_diffusion[] = {0.0f, 0.3f, 0.0f, 1.0f};
-GLfloat light_position[] = {5.0f, 1.0f, 5.0f, 1.0f};
-GLfloat light_diffuse[] = {.3f, 0.5f, 0.2f, 1.0f};
-GLfloat light_specular[] = {0.0f, 0.0f, 0.0f, 0.0f};
-GLfloat light_ambient[] = {0.0f, 0.0f, 0.0f, 1.0f};
+bool flat, wireframe, adaptive, drawTets, dof, showrain; 
+
+GLint fogMode; 
+
+Vector3f* rain; 
+int numdrops = 1000; 
 
 //****************************************************
 // GLUT and Initialization Functions
 //****************************************************
 
 void reshape(int w, int h) {
-	viewport.w = w;
-	viewport.h = h;
+	   viewport.w = w;
+        viewport.h = h;
 
-	glViewport(0, 0, w, h);
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	gluPerspective(focus, (GLfloat) w/ (GLfloat) h, 1.0, 40.0);
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-	gluLookAt(0, 0, 5, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+        glViewport(0, 0, w, h);
+        glMatrixMode(GL_PROJECTION);
+        glLoadIdentity();
+        gluPerspective(focus, (GLfloat) w/ (GLfloat) h, 1.0, 40.0);
+        glMatrixMode(GL_MODELVIEW);
+        glLoadIdentity();
+        gluLookAt(0, 0, 5, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
 }
 
+void accFrustum(GLdouble left, GLdouble right, GLdouble bottom,
+    GLdouble top, GLdouble near, GLdouble far, GLdouble pixdx, 
+    GLdouble pixdy, GLdouble eyedx, GLdouble eyedy, 
+    GLdouble focus)
+{
+    GLdouble xwsize, ywsize; 
+    GLdouble dx, dy;
+    GLint viewport[4];
+
+    glGetIntegerv (GL_VIEWPORT, viewport);
+
+    xwsize = right - left;
+    ywsize = top - bottom;
+    dx = -(pixdx*xwsize/(GLdouble) viewport[2] + 
+            eyedx*near/focus);
+    dy = -(pixdy*ywsize/(GLdouble) viewport[3] + 
+            eyedy*near/focus);
+
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glFrustum (left + dx, right + dx, bottom + dy, top + dy, 
+        near, far);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+
+    glTranslatef (-eyedx, -eyedy, 0.0);
+   
+    
+}
+
+void accPerspective(GLdouble fovy, GLdouble aspect, 
+    GLdouble near, GLdouble far, GLdouble pixdx, GLdouble pixdy, 
+    GLdouble eyedx, GLdouble eyedy, GLdouble focus)
+{
+    GLdouble fov2,left,right,bottom,top;
+    fov2 = ((fovy*M_PI) / 180.0) / 2.0;
+
+    top = near / (cos(fov2) / sin(fov2));
+    bottom = -top;
+    right = top * aspect;
+    left = -right;
+
+    accFrustum (left, right, bottom, top, near, far,
+        pixdx, pixdy, eyedx, eyedy, focus);
+}
+
+void drawRain(){
+    for(int i = 0; i < numdrops; i++){
+        GLfloat rain_diffuse[] = {1.0f, 1.0f, 1.0f, 1.0f};
+       glMaterialfv(GL_FRONT, GL_AMBIENT, rain_diffuse);	
+       glLightfv(GL_LIGHT0, GL_AMBIENT, rain_diffuse);
+    
+        glBegin(GL_LINES); 
+            glVertex3f(rain[i](0) * 0.01, rain[i](1) * 0.01, rain[i](2) *0.01);
+             glVertex3f(rain[i](0) * 0.01, rain[i](1)*0.01 + 0.1, rain[i](2)*0.01);
+        glEnd(); 
+        rain[i](1) -= 10; 
+        if(rain[i](1) < -250) rain[i](1) = 250; 
+
+    }
+   
+}
+
+
 void display(void) {
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    if(dof){
+        int jitter; 
+        GLint vp[4]; 
+        /*float j8[16] = {-0.334818,  0.435331, 
+                        0.286438, -0.393495,
+                        0.459462,  0.141540,
+                        -0.414498, -0.192829,
+                        -0.183790,  0.082102,
+                        -0.079263, -0.317383,
+                        0.102254,  0.299133,
+                        0.164216, -0.054399}; */
+        float j8[6] = {-0.373411, -0.250550,
+                        0.256263,  0.368119,
+                        0.117148, -0.117570}; 
+        
+        
+        
+        glGetIntegerv(GL_VIEWPORT, vp); 
+        glClear(GL_ACCUM_BUFFER_BIT);
+        
+        for(jitter = 0; jitter < 3; jitter++){
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+             accPerspective (45.0, 
+             (GLdouble) vp[2]/(GLdouble) vp[3], 
+             0.1, 50.0, 0.0, 0.0,
+             0.03*j8[jitter * 2], 0.03*j8[jitter * 2 + 1], 2.0);
+            
+        //do usual rendering
+        
+            gluLookAt(0, 0, 3, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+        
+        glPushMatrix();
+        glTranslatef(xtrans, ytrans, ztrans);
+        glRotatef(rotUD, 1, 0, 0);
+        glRotatef(rotLR, 0, 1, 0);
+        glRotatef(rotQE, 0, 0, 1);
+        grid->draw();
+        glPopMatrix();
+         glAccum(GL_ACCUM, 0.33); 
+        }
+            glAccum(GL_RETURN, 1.0); 
+        glFlush(); 
+        
+    }
+    else{
+    
+         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glPushMatrix();
+        glTranslatef(xtrans, ytrans, ztrans);
+        glRotatef(rotUD, 1, 0, 0);
+        glRotatef(rotLR, 0, 1, 0);
+        glRotatef(rotQE, 0, 0, 1);
+        grid->draw();
+        if (showrain) drawRain(); 
+        glPopMatrix();
 
-	//if (flat) {
-	//	glShadeModel(GL_FLAT);
-	//} else {
-	//	glShadeModel(GL_SMOOTH);
-	//}
+    }
+    glutSwapBuffers(); 
 
-	glPushMatrix();
-	glTranslatef(xtrans, ytrans, ztrans);
-	glRotatef(rotUD, 1, 0, 0);
-	glRotatef(rotLR, 0, 1, 0);
-	glRotatef(rotQE, 0, 0, 1);
-	grid->draw();
-	glPopMatrix();
-	glutSwapBuffers();
 }
 
 void idle (void) {
@@ -129,6 +234,42 @@ void processSpecialKeys(int key, int x, int y) {
 
 void keyboard(unsigned char key, int x, int y) {
 	switch (key) {
+    case '1':
+       dof = !dof; break;    
+    case 'F':
+    glEnable(GL_FOG);
+   {
+      GLfloat fogColor[4] = {0.6, 0.6, 0.6, 1.0};
+
+      fogMode = GL_EXP;
+      glFogi (GL_FOG_MODE, fogMode);
+      glFogfv (GL_FOG_COLOR, fogColor);
+      glFogf (GL_FOG_DENSITY, 0.25);
+      glHint (GL_FOG_HINT, GL_DONT_CARE);
+      glFogf (GL_FOG_START, 1.0);
+      glFogf (GL_FOG_END, 5.0);
+   }
+    break;
+    case 'f':
+         if (fogMode == GL_EXP) {
+            fogMode = GL_EXP2;
+            printf ("Fog mode is GL_EXP2\n");
+         }
+         else if (fogMode == GL_EXP2) {
+            fogMode = GL_LINEAR;
+            printf ("Fog mode is GL_LINEAR\n");
+         }
+         else if (fogMode == GL_LINEAR) {
+            fogMode = GL_EXP;
+            printf ("Fog mode is GL_EXP\n");
+         }
+         glFogi (GL_FOG_MODE, fogMode);
+         glutPostRedisplay();
+         break;
+    case 'r':
+        showrain = !showrain; 
+        break; 
+    
 	case 's':
 		if (flat) {
 			flat = false;
@@ -208,53 +349,62 @@ void test(){
     }
 }
 
-int main(int argc, char* argv[]) {
-	viewport.h = 800;
+void initRain(){
+    srand(time(NULL)); 
+    for(int i = 0; i < numdrops; i ++){
+        rain[i] = Vector3f((rand() % 500)-250, (rand() % 500) -250, (rand() % 500) -250); 
+    }
+    
+}
+
+void initialize(){
+    viewport.h = 800;
 	viewport.w = 800;
     
-
+    rain = new Vector3f[numdrops]; 
+    initRain(); 
     
-
     initializeDensityFunction(); 
-    //test(); 
 	grid = new Grid(Vector3f(0, 0, 0), stepsize, gridMax, density);
 
 	wireframe = false;
 	drawTets = false;
-
-	glutInit(&argc, argv);
-	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
-	glutInitWindowSize(viewport.w, viewport.h);
-	glutInitWindowPosition(0,0);
-	glutCreateWindow("Final Project");
-	
-	glClearColor(0, 0, 0, 0);
-	
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	gluPerspective(60.0, (float)viewport.w/(float)viewport.h, 1.0, 40.0);
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-
+    dof = false; 
+    showrain = false; 
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_COLOR_MATERIAL);
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
     glEnable(GL_NORMALIZE); 
-   
+    
+    
+   glClearColor(0.6, 0.6, 0.6, 1.0);  /* fog color */
 
-	glShadeModel(GL_FLAT);
-	glMaterialfv(GL_FRONT, GL_AMBIENT, mat_ambient);
-	glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffusion);
-	glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
-	glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
 
-	glLightfv(GL_LIGHT0, GL_POSITION, light_position);
-	glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
-	glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
-	glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
-	
+    
+    
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	gluPerspective(60.0, (float)viewport.w/(float)viewport.h, 1.0, 40.0);
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+
+    
+
+}
+
+int main(int argc, char* argv[]) {
+
+    initialize(); 
+
+	glutInit(&argc, argv);
+	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_ACCUM);
+	glutInitWindowSize(viewport.w, viewport.h);
+	glutInitWindowPosition(0,0);
+	glutCreateWindow("Final Project");
+	initialize(); 
+
 	glutDisplayFunc(display);
 	glutReshapeFunc(reshape);
 	glutKeyboardFunc(keyboard);
