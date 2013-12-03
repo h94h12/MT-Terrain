@@ -17,8 +17,8 @@ HeightMap h;
 void initializeDensityFunction(){
     h = HeightMap(100); 
     h.addPerlinNoise(10); 
-    //for(int i = 0; i < 10; i++) h.erode(16); 
-    //h.smoothen(); 
+    for(int i = 0; i < 10; i++) h.erode(16); 
+    h.smoothen(); 
   
 }
 
@@ -39,25 +39,18 @@ float density(Vector3f point) {
 // Global Variables
 //****************************************************
 Viewport viewport;
-Vector3f gridMax = Vector3f(4, 4, 8); 
-Vector3f stepsize = Vector3f(0.1, 0.2, 0.1); 
+Vector3f gridMax = Vector3f(5, 5, 5); 
+Vector3f stepsize = Vector3f(0.1, 0.1, 0.1); 
 
 Grid *grid;
 float ustep, vstep, error, max_z = 0, focus = 45;
 float rotUD = 0, rotLR = 0, rotQE = 0, ytrans = 0, xtrans = 0, ztrans = 0;
-bool flat, wireframe, adaptive, drawTets, dof; 
-GLfloat mat_specular[] = {0.8f, 0.8f, 0.8f, 0.0f};
-GLfloat mat_shininess[] = {128.0f};
-GLfloat mat_ambient[] = {0.0f, 0.3f, 0.0f, 1.0f};
-GLfloat mat_diffusion[] = {0.0f, 0.3f, 0.0f, 1.0f};
-GLfloat light_position[] = {5.0f, 1.0f, 5.0f, 1.0f};
-GLfloat light_diffuse[] = {.3f, 0.5f, 0.2f, 1.0f};
-GLfloat light_specular[] = {0.0f, 0.0f, 0.0f, 0.0f};
-GLfloat light_ambient[] = {0.0f, 0.0f, 0.0f, 1.0f};
+bool flat, wireframe, adaptive, drawTets, dof, showrain; 
 
 GLint fogMode; 
 
-
+Vector3f* rain; 
+int numdrops = 1000; 
 
 //****************************************************
 // GLUT and Initialization Functions
@@ -122,6 +115,24 @@ void accPerspective(GLdouble fovy, GLdouble aspect,
         pixdx, pixdy, eyedx, eyedy, focus);
 }
 
+void drawRain(){
+    for(int i = 0; i < numdrops; i++){
+        GLfloat rain_diffuse[] = {1.0f, 1.0f, 1.0f, 1.0f};
+       glMaterialfv(GL_FRONT, GL_AMBIENT, rain_diffuse);	
+       glLightfv(GL_LIGHT0, GL_AMBIENT, rain_diffuse);
+    
+        glBegin(GL_LINES); 
+            glVertex3f(rain[i](0) * 0.01, rain[i](1) * 0.01, rain[i](2) *0.01);
+             glVertex3f(rain[i](0) * 0.01, rain[i](1)*0.01 + 0.1, rain[i](2)*0.01);
+        glEnd(); 
+        rain[i](1) -= 10; 
+        if(rain[i](1) < -250) rain[i](1) = 250; 
+
+    }
+   
+}
+
+
 void display(void) {
     if(dof){
         int jitter; 
@@ -176,6 +187,7 @@ void display(void) {
         glRotatef(rotLR, 0, 1, 0);
         glRotatef(rotQE, 0, 0, 1);
         grid->draw();
+        if (showrain) drawRain(); 
         glPopMatrix();
 
     }
@@ -223,7 +235,21 @@ void processSpecialKeys(int key, int x, int y) {
 void keyboard(unsigned char key, int x, int y) {
 	switch (key) {
     case '1':
-       dof = !dof; break;     
+       dof = !dof; break;    
+    case 'F':
+    glEnable(GL_FOG);
+   {
+      GLfloat fogColor[4] = {0.6, 0.6, 0.6, 1.0};
+
+      fogMode = GL_EXP;
+      glFogi (GL_FOG_MODE, fogMode);
+      glFogfv (GL_FOG_COLOR, fogColor);
+      glFogf (GL_FOG_DENSITY, 0.25);
+      glHint (GL_FOG_HINT, GL_DONT_CARE);
+      glFogf (GL_FOG_START, 1.0);
+      glFogf (GL_FOG_END, 5.0);
+   }
+    break;
     case 'f':
          if (fogMode == GL_EXP) {
             fogMode = GL_EXP2;
@@ -240,6 +266,9 @@ void keyboard(unsigned char key, int x, int y) {
          glFogi (GL_FOG_MODE, fogMode);
          glutPostRedisplay();
          break;
+    case 'r':
+        showrain = !showrain; 
+        break; 
     
 	case 's':
 		if (flat) {
@@ -320,9 +349,20 @@ void test(){
     }
 }
 
+void initRain(){
+    srand(time(NULL)); 
+    for(int i = 0; i < numdrops; i ++){
+        rain[i] = Vector3f((rand() % 500)-250, (rand() % 500) -250, (rand() % 500) -250); 
+    }
+    
+}
+
 void initialize(){
     viewport.h = 800;
 	viewport.w = 800;
+    
+    rain = new Vector3f[numdrops]; 
+    initRain(); 
     
     initializeDensityFunction(); 
 	grid = new Grid(Vector3f(0, 0, 0), stepsize, gridMax, density);
@@ -330,7 +370,7 @@ void initialize(){
 	wireframe = false;
 	drawTets = false;
     dof = false; 
-
+    showrain = false; 
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_COLOR_MATERIAL);
@@ -338,30 +378,10 @@ void initialize(){
 	glEnable(GL_LIGHT0);
     glEnable(GL_NORMALIZE); 
     
-    glEnable(GL_FOG);
-   {
-      GLfloat fogColor[4] = {0.5, 0.5, 0.5, 1.0};
+    
+   glClearColor(0.6, 0.6, 0.6, 1.0);  /* fog color */
 
-      fogMode = GL_EXP;
-      glFogi (GL_FOG_MODE, fogMode);
-      glFogfv (GL_FOG_COLOR, fogColor);
-      glFogf (GL_FOG_DENSITY, 0.35);
-      glHint (GL_FOG_HINT, GL_DONT_CARE);
-      glFogf (GL_FOG_START, 1.0);
-      glFogf (GL_FOG_END, 5.0);
-   }
-   glClearColor(0.5, 0.5, 0.5, 1.0);  /* fog color */
 
-	glShadeModel(GL_FLAT);
-	glMaterialfv(GL_FRONT, GL_AMBIENT, mat_ambient);
-	glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffusion);
-	glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
-	glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
-
-	glLightfv(GL_LIGHT0, GL_POSITION, light_position);
-	glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
-	glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
-	glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
     
     
 	glMatrixMode(GL_PROJECTION);
