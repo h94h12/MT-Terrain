@@ -1,9 +1,10 @@
+#ifndef TerrainH
+#define TerrainH
 #include <cstdlib>
 #include <time.h>
 #include <math.h> 
 #include <cstdio>
 #define _USE_MATH_DEFINES
-
 
 //http://www.float4x4.net/index.php/2010/06/generating-realistic-and-playable-terrain-height-maps/
 class Perlin{
@@ -45,3 +46,5 @@ class HeightMap{
     
     
 };
+
+#endif 

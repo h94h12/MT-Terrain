@@ -1,58 +1,5 @@
 #include "glUtil.h"
-/*
 
-static const GLenum types[6] = { GL_TEXTURE_CUBE_MAP_POSITIVE_X, 
-    GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 
-    GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 
-    GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,
-    GL_TEXTURE_CUBE_MAP_POSITIVE_Z,
-    GL_TEXTURE_CUBE_MAP_NEGATIVE_Z };
-
-static const char* pVSName = "VS";
-static const char* pFSName = "FS";
-
-static const char* pVS = "                                                          \n\
-#version 330                                                                        \n\
-                                                                                    \n\
-layout (location = 0) in vec3 Position;                                             \n\
-                                                                                    \n\
-uniform mat4 gWVP;                                                                  \n\
-                                                                                    \n\
-out vec3 TexCoord0;                                                                 \n\
-                                                                                    \n\
-void main()                                                                         \n\
-{                                                                                   \n\
-    vec4 WVP_Pos = gWVP * vec4(Position, 1.0);                                      \n\
-    gl_Position = WVP_Pos.xyww;                                                     \n\
-    TexCoord0   = Position;                                                         \n\
-}";
- 
-static const char* pFS = "                                                          \n\
-#version 330                                                                        \n\
-                                                                                    \n\
-in vec3 TexCoord0;                                                                  \n\
-                                                                                    \n\
-out vec4 FragColor;                                                                 \n\
-                                                                                    \n\
-uniform samplerCube gCubemapTexture;                                                \n\
-                                                                                    \n\
-void main()                                                                         \n\
-{                                                                                   \n\
-    FragColor = texture(gCubemapTexture, TexCoord0);                                \n\
-}";
-
-const char* Type2Name(GLuint type) {
-    switch(type) {
-        case GL_VERTEX_SHADER:
-            return pVSName;
-        case GL_FRAGMENT_SHADER:
-            return pFSName;
-        default:
-            assert(0);
-    }
-    return NULL;
-}
-*/
 Triangle::Triangle(Vector3f v1, Vector3f v2, Vector3f v3) {
     this->v1 = v1;
     this->v2 = v2;
@@ -211,251 +158,45 @@ Grid::Grid(Vector3f center, Vector3f step, Vector3f gridMax) {
         }
     }
 }
-/*
 
-//----------------------------------------------------------------------------------------------
-//
-//CubeMapTex Implementation
-//
-//----------------------------------------------------------------------------------------------
+GLuint AddTextureToOpenGL(unsigned w, unsigned h, void * ptr) {
+    GLuint texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
 
-bool CubeMapTex::load() {
-    glGenTextures(1, &m_textureObj);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, m_textureObj);
+    // select modulate to mix texture with color for shading
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE );
 
-    Magick::Image* pImage = NULL;
-    Magick::Blob blob;
+    // when texture area is small, bilinear filter the closest mipmap
+    //glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,GL_LINEAR_MIPMAP_NEAREST );
+    // when texture area is large, bilinear filter the first mipmap
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 
-    for (int i = 0; i < (int)ARRAY_SIZE_IN_ELEMENTS(types); i++) {
-        pImage = new Magick::Image(fileNames[i]);
-
-        try {
-            pImage->write(&blob, "RGBA");
-        } catch (Magick::Error& error) {
-            cout << "Error loading texture '" << fileNames[i] << "': " << error.what() << endl;
-            delete pImage;
-            return false;
-        }
-
-        glTexImage2D(types[i], 0, GL_RGB, pImage->columns(), pImage->rows(), 0,
-            GL_RGBA, GL_UNSIGNED_BYTE, blob.data());
-
-        delete pImage;
-    }
-
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-
-    return true;
-
+    // if wrap is true, the texture wraps over at the edges (repeat)
+    //       ... false, the texture ends at the edges (clamp)
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, 1 ? GL_REPEAT : GL_CLAMP );
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, 1 ? GL_REPEAT : GL_CLAMP );
+    
+ 
+    //void * ptr = &image[0];
+    gluBuild2DMipmaps( GL_TEXTURE_2D, 4, w, h, GL_RGBA, GL_UNSIGNED_BYTE, ptr);
+    
+    return texture;
 }
 
-void CubeMapTex::bind(GLenum TextureUnit) {
-    glActiveTexture(TextureUnit);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, m_textureObj);
-}
+GLuint LoadTextureFromPNG(const char * filename) {
+    std::vector<unsigned char> png;
+    std::vector<unsigned char> image; 
+    lodepng::State state; //optionally customize this one
+    unsigned int w, h;
 
-CubeMapTex::CubeMapTex(const string& Directory,
-                               const string& PXFilename,
-                               const string& NXFilename,
-                               const string& PYFilename,
-                               const string& NYFilename,
-                               const string& PZFilename,
-                               const string& NZFilename) {
-    string::const_iterator it = Directory.end();
-    it--;
-    string BaseDir = (*it == '/') ? Directory : Directory + "/";
-     
-    fileNames[0] = BaseDir + PXFilename;
-    fileNames[1] = BaseDir + NXFilename;
-    fileNames[2] = BaseDir + PYFilename;
-    fileNames[3] = BaseDir + NYFilename;
-    fileNames[4] = BaseDir + PZFilename;
-    fileNames[5] = BaseDir + NZFilename;
-    m_textureObj = 0;
-}
+    lodepng::load_file(png, filename); 
+    
+    unsigned error = lodepng::decode(image,  w,  h, state, png); // decode file into image
+    if(error) std::cout << "decoder error " << error << ": "<< lodepng_error_text(error) << std::endl;
 
-CubeMapTex::~CubeMapTex() {
-    if (m_textureObj != 0) {
-        glDeleteTextures(1, &m_textureObj);
-    }
-}
 
-//----------------------------------------------------------------------------------------------
-//
-//Technique Implementation
-//
-//----------------------------------------------------------------------------------------------
+    //void * ptr = &image[0];
+    return AddTextureToOpenGL(w, h, &image[0]);
 
-Technique::Technique() {
-    m_shaderProj = 0;
 }
-
-Technique::~Technique()
-{
-    // Delete the intermediate shader objects that have been added to the program
-    // The list will only contain something if shaders were compiled but the object itself
-    // was destroyed prior to linking.
-    for (ShaderObjList::iterator it = m_shaderObjList.begin() ; it != m_shaderObjList.end() ; it++)
-    {
-        glDeleteShader(*it);
-    }
- 
-    if (m_shaderProj != 0)
-    {
-        glDeleteProgram(m_shaderProj);
-        m_shaderProj = 0;
-    }
-}
-
-bool Technique::Init() {
-    m_shaderProj = glCreateProgram();
- 
-    if (m_shaderProj == 0) {
-        fprintf(stderr, "Error creating shader program\n");
-        return false;
-    }
- 
-    return true;
-}
-
-// Use this method to add shaders to the program. When finished - call finalize()
-bool Technique::AddShader(GLenum Type, const char* pText)
-{
-    GLuint ShaderObj = glCreateShader(Type);
- 
-    if (ShaderObj == 0) {
-        fprintf(stderr, "Error creating shader type %d\n", Type);
-        return false;
-    }
- 
-    // Save the shader object - will be deleted in the destructor
-    m_shaderObjList.push_back(ShaderObj);
- 
-    const GLchar* p[1];
-    p[0] = pText;
-    GLint Lengths[1];
-    Lengths[0]= strlen(pText);
-    glShaderSource(ShaderObj, 1, p, Lengths);
- 
-    glCompileShader(ShaderObj);
- 
-    GLint success;
-    glGetShaderiv(ShaderObj, GL_COMPILE_STATUS, &success);
- 
-    if (!success) {
-        GLchar InfoLog[1024];
-        glGetShaderInfoLog(ShaderObj, 1024, NULL, InfoLog);
-        fprintf(stderr, "Error compiling %s: '%s'\n", Type2Name(Type), InfoLog);
-        return false;
-    }
- 
-    glAttachShader(m_shaderProj, ShaderObj);
- 
-    return true;
-}
- 
- 
-// After all the shaders have been added to the program call this function
-// to link and validate the program.
-bool Technique::Finalize()
-{
-    GLint Success = 0;
-    GLchar ErrorLog[1024] = { 0 };
- 
-    glLinkProgram(m_shaderProj);
- 
-    glGetProgramiv(m_shaderProj, GL_LINK_STATUS, &Success);
-    if (Success == 0) {
-        glGetProgramInfoLog(m_shaderProj, sizeof(ErrorLog), NULL, ErrorLog);
-        fprintf(stderr, "Error linking shader program: '%s'\n", ErrorLog);
-        return false;
-    }
- 
-    glValidateProgram(m_shaderProj);
-    glGetProgramiv(m_shaderProj, GL_VALIDATE_STATUS, &Success);
-    if (!Success) {
-        glGetProgramInfoLog(m_shaderProj, sizeof(ErrorLog), NULL, ErrorLog);
-        fprintf(stderr, "Invalid shader program: '%s'\n", ErrorLog);
-        return false;
-    }
- 
-    // Delete the intermediate shader objects that have been added to the program
-    for (ShaderObjList::iterator it = m_shaderObjList.begin() ; it != m_shaderObjList.end() ; it++)
-    {
-        glDeleteShader(*it);
-    }
- 
-    m_shaderObjList.clear();
- 
-    return true;
-}
-
-void Technique::Enable()
-{
-    glUseProgram(m_shaderProj);
-}
- 
- 
-GLint Technique::GetUniformLocation(const char* pUniformName)
-{
-    GLint Location = glGetUniformLocation(m_shaderProj, pUniformName);
- 
-    if (Location == (GLint)0xFFFFFFFF) {
-        fprintf(stderr, "Warning! Unable to get the location of uniform '%s'\n", pUniformName);
-    }
- 
-    return Location;
-}
-
-//----------------------------------------------------------------------------------------------
-//
-//SkyBoxTechnique Implementation
-//
-//----------------------------------------------------------------------------------------------
-
-SkyboxTechnique::SkyboxTechnique() {   
-}
- 
-bool SkyboxTechnique::Init() {
-    if (!Technique::Init()) {
-        return false;
-    }
- 
-    if (!AddShader(GL_VERTEX_SHADER, pVS)) {
-        return false;
-    }
- 
-    if (!AddShader(GL_FRAGMENT_SHADER, pFS)) {
-        return false;
-    }
- 
-    if (!Finalize()) {
-        return false;
-    }
- 
-    m_WVPLocation = GetUniformLocation("gWVP");
-    m_textureLocation = GetUniformLocation("gCubemapTexture");
-  
-    if (m_WVPLocation == INVALID_UNIFORM_LOCATION || 
-        m_textureLocation == INVALID_UNIFORM_LOCATION) {
-        return false;
-    }
- 
-    return true;
-}
- 
- 
-void SkyboxTechnique::SetWVP(const Matrix4f& WVP) {
-    glUniformMatrix4fv(m_WVPLocation, 1, GL_TRUE, (const GLfloat*)WVP.data());    
-}
- 
- 
-void SkyboxTechnique::SetTextureUnit(unsigned int TextureUnit) {
-    glUniform1i(m_textureLocation, TextureUnit);
-}
-
-*/

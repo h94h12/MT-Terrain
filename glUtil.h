@@ -33,6 +33,7 @@
 
 #include <time.h>
 #include <math.h>
+#include "textures/lodepng.h"
 #include "Eigen/Dense"
 #include "Eigen/StdVector"
 
@@ -53,6 +54,9 @@ typedef vector<Triangle/*, Eigen::aligned_allocator<Eigen::Vector3f> */> vector_
 
 extern bool wireframe;
 extern vector_tri tris;
+
+GLuint AddTextureToOpenGL(unsigned w, unsigned h, void * ptr);
+GLuint LoadTextureFromPNG(const char * filename);
 
 class Tetrahedron {
 public:
@@ -83,6 +87,8 @@ private:
 
 // SKYDOME
 
+/*
+
 class CubeMapTex{
 public:
 	CubeMapTex(const string& dir, 
@@ -102,7 +108,7 @@ private:
 	GLuint m_textureObj;
 };
 
-/**
+
 class Technique {
 public: 
 	Technique();
