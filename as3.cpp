@@ -17,7 +17,7 @@ HeightMap h;
 
 void initializeDensityFunction(){
     h = HeightMap(100); 
-    h.addPerlinNoise(20); 
+    h.addPerlinNoise(15); 
     for(int i = 0; i < 10; i++) h.erode(16); 
     h.smoothen(); 
 }
@@ -25,12 +25,17 @@ void initializeDensityFunction(){
 float density(Vector3f point) {
     int x = point[0]*10 + 40;  
     int y = point[2]*10 + 40; 
-    float height = h.heights[x * 100 + y]/200;
-    
-    //int x = (int)floorf((point[0] + 4)/8 * 64);
-    //int z = (int)floorf((point[2] + 4)/8 * 64);
-    //float height = (h.heights[x * 64 + z])/200 * 3;  
+    float dist = point[0]*point[0] + point[2]*point[2];
+ 
+    float height = h.heights[x * 100 + y]/200; 
+    if (height < 0) height *= -1; 
+    if (dist - 3 > 0) height *= 0; 
+    else if (dist - 2.5 > 0) height *= 0.05;
+    else if (dist - 2 > 0) height *= 0.25; 
+    else if (dist - 1.5> 0) height *= 0.5; 
+ 
     return point(1) - height;
+    
     //return pow(1.0f-sqrt(pow(point(0), 2.0f) + pow(point(1), 2.0f)), 2.0f) + pow(point(2), 2.0f) - .5;
     //return tan(3.14*point(0))-point(1);
 }
@@ -39,7 +44,7 @@ float density(Vector3f point) {
 // Global Variables
 //****************************************************
 Viewport viewport;
-Vector3f gridMax = Vector3f(20, 4, 20); 
+Vector3f gridMax = Vector3f(4, 4, 4); 
 Vector3f stepsize = Vector3f(.1, .1, .1); 
 vector_tri tris;
 
@@ -181,6 +186,12 @@ void display(void) {
 	drawTris();
     if (showrain) drawRain();    
     drawClouds(); // clouds have transparency, so draw last!
+    
+    //need to draw reflection
+    /*glMatrixMode(GL_MODELVIEW);
+    glRotatef(180, 1, 0, 0); 
+    glTranslatef(0, -2, 0); 
+    drawTris();*/ 
 
 	glPopMatrix();
 	glutSwapBuffers();
