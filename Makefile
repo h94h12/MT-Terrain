@@ -5,7 +5,7 @@ ifeq ($(shell sw_vers 2>/dev/null | grep Mac | awk '{ print $$2}'),Mac)
     	-L"/System/Library/Frameworks/OpenGL.framework/Libraries" \
     	-L"/opt/local/lib" -lGL -lGLU -lm -lstdc++ -lpthread
 else
-	CFLAGS = -g -O7 -DGL_GLEXT_PROTOTYPES -Iglut-3.7.6-bin
+	CFLAGS = -g -O2 -DGL_GLEXT_PROTOTYPES -Iglut-3.7.6-bin
 	LDFLAGS = -lGL -lglut -lGLU
 endif
 	

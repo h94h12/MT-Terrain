@@ -15,7 +15,8 @@ class Perlin{
     float gradients[256*3];    
     int perms[256]; 
     
-    Perlin(); 
+    Perlin() {}; 
+    Perlin(int); 
     
     float Noise(float, float, float); 
     void InitGradients(); 
@@ -37,7 +38,7 @@ class HeightMap{
     Perlin perlin; 
     
     HeightMap(){}; 
-    HeightMap(int); 
+    HeightMap(int, int); 
     
     void addPerlinNoise(float); 
     void perturb(float, float);

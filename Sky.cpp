@@ -1,32 +1,66 @@
 #include "Sky.h"
 
-GLuint t_SkyBoxTop,t_SkyBoxBottom;
-GLuint t_Clouds1, t_Clouds2;
-float skyboxMax = 20.0;
+GLuint t_SkyBoxTop;
 
+
+unsigned cloudLayerCount = 5;
+std::vector<GLuint> t_Clouds;
+std::vector<float> cloudsRot;
+std::vector<Dot> cloudlevels;
+
+
+float skyboxMax = 20.0;
+float a = skyboxMax;
+
+
+float sunRot, sunX, sunY, sunZ;
+GLuint sunTexture;
+float sunDistance;
+Dot sunPosDot;
+
+
+Dot sky_bur = Dot(-a, a, a);
+Dot sky_bul = Dot( a, a, a);
+Dot sky_bdr = Dot(-a,-a, a); 
+Dot sky_bdl = Dot( a,-a, a);
+
+Dot sky_fur = Dot(-a, a,-a);
+Dot sky_ful = Dot( a, a,-a);
+Dot sky_fdr = Dot(-a,-a,-a);  
+Dot sky_fdl = Dot( a,-a,-a);
+
+
+
+Dot sun_ul = Dot(-skyboxMax/2, -skyboxMax/2, 0);
+Dot sun_ur = Dot(-skyboxMax/2,  skyboxMax/2, 0);
+Dot sun_dr = Dot(skyboxMax/2,   skyboxMax/2, 0);
+Dot sun_dl = Dot(skyboxMax/2,  -skyboxMax/2, 0);
+
+
+
+// openGL texturing based off tutorial from http://www.nullterminator.net/gltexture.html
 GLuint CreatePerlinCloud(unsigned indx, unsigned size) {
     unsigned width = size, height = size;
     std::vector<unsigned char> image;
     image.reserve(width * height * 4);
      
-    HeightMap hm = HeightMap(width); 
-    if (indx == 1) {
-        hm.addPerlinNoise(2); 
-        hm.addPerlinNoise(7); 
-        hm.addPerlinNoise(13); 
-        hm.smoothen();
-        hm.erode(5);
-    } else {
-        hm.addPerlinNoise(3);    
-        hm.addPerlinNoise(12); 
-        hm.addPerlinNoise(25); 
-        hm.erode(2);
-        hm.smoothen();
+    HeightMap hm = HeightMap(width, indx*123456789); 
+    cout << "pre-rendering cloud layer : " << indx << endl;
 
-    }
+    hm.addPerlinNoise(2 + (indx%2));
+    hm.smoothen();
+    hm.addPerlinNoise(4 + (indx%5)); 
+    hm.addPerlinNoise(7 + (indx%2)); 
 
-    float mmax = -9999;
-    float mmin = 9999;
+    hm.addPerlinNoise(9 + (indx%10)); 
+    hm.addPerlinNoise(16 + (indx%20)); 
+    
+    for (unsigned i = 0; i < (indx % 6) + 5; i++) hm.erode((indx % 5) + 2);
+    hm.smoothen();
+    
+
+    float mmax = -9999999;
+    float mmin = 9999999;
     for(unsigned y = 0; y < height; y++) {
         for(unsigned x = 0; x < width; x++) {
              float pn = ((hm).heights[x*height + y]);
@@ -34,14 +68,19 @@ GLuint CreatePerlinCloud(unsigned indx, unsigned size) {
              mmin = std::min(pn, mmin);
         }
     }
+    cout << "mmax: " << mmax << ", mmin:" << mmin << endl;
     float easeDist = height/5;
     for(unsigned y = 0; y < height; y++) {
         for(unsigned x = 0; x < width; x++) {
-            //std::cout << "(*hm).heights[x*height + y]" << (hm).heights[x*height + y] << std::endl;
             float pn = ((hm).heights[x*height + y]-mmin)/(mmax - mmin);
-            pn = sqrtf(pn*255);
+            //if (pn < 0.0 || pn > 1.0) cout << "@#%#$$%#" << endl;
+            pn = sqrt(pn*255);
+
+           
             float pn2 = 255 - ((pn-4)*25);
-            
+            pn2 *= 2.0/(float) cloudLayerCount; // so if there's a lot of clouds, each one is less visible
+
+
             image[4 * width * y + 4 * x + 0] = 255.0-pn;
             image[4 * width * y + 4 * x + 1] = 255.0-pn;
             image[4 * width * y + 4 * x + 2] = 255.0-(pn*0.7);
@@ -56,23 +95,15 @@ GLuint CreatePerlinCloud(unsigned indx, unsigned size) {
         }
     }
   
-  
-    
     GLuint texture;
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
-    glTexEnvf( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE ); // select modulate to mix texture with color for shading
+    glTexEnvf( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE );
 
-    // when texture area is small, bilinear filter the closest mipmap
-    glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST );
-    // when texture area is large, bilinear filter the first mipmap
     glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 
-    // if wrap is true, the texture wraps over at the edges (repeat)
-    //       ... false, the texture ends at the edges (clamp)
-    glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, 1 ? GL_REPEAT : GL_CLAMP );
-    glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, 1 ? GL_REPEAT : GL_CLAMP );
-    
+    glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     
     void * ptr = &image[0];
     gluBuild2DMipmaps(GL_TEXTURE_2D, 4, width, height, GL_RGBA, GL_UNSIGNED_BYTE, ptr);
@@ -81,24 +112,10 @@ GLuint CreatePerlinCloud(unsigned indx, unsigned size) {
     //return AddTextureToOpenGL(width, height, &image[0]);
 }
 
-void initializeSkyBox() {
-    cout << "initializeSkyBox() " << endl;
-    //t_SkyBoxTop = LoadTextureFromPNG("textures/sky_temp.png");
+void initSkyBox() {
+    cout << "initSkyBox() " << endl;
     t_SkyBoxTop = LoadTextureFromPNG("textures/sm64_ocean.png");
-    
-    
-    
-    t_Clouds1 = CreatePerlinCloud(1, 512);
-    t_Clouds2 = CreatePerlinCloud(2, 512);
-    /* 
-     * 
-     * for some reason, a second call to CreatePerlinCloud is glitchy and results in 
-     * random NaN's... even if it's the same arguments as the first, successful time
-     * 
-     * 
-    */
-    //t_Clouds = LoadTextureRAW("texture/transp.png", 1);
-    //t_SkyBoxTop = LoadTextureRAW("texture/test5.raw", 1);
+
 }
 
 void drawSkyBoxDot(Dot d, double u, double v) {
@@ -106,21 +123,10 @@ void drawSkyBoxDot(Dot d, double u, double v) {
 }
 
 void drawSkyBox() {
-    float a = skyboxMax;
-
-    Dot sky_bur = Dot(-a, a, a);
-    Dot sky_bul = Dot( a, a, a);
-    Dot sky_bdr = Dot(-a,-a, a); 
-    Dot sky_bdl = Dot( a,-a, a);
-
-    Dot sky_fur = Dot(-a, a,-a);
-    Dot sky_ful = Dot( a, a,-a);
-    Dot sky_fdr = Dot(-a,-a,-a);  
-    Dot sky_fdl = Dot( a,-a,-a);
     
+    //cout << "t_SkyBoxTop" << t_SkyBoxTop << endl;
     
     glDisable(GL_LIGHTING);
-    
     glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, t_SkyBoxTop);
     
@@ -166,24 +172,32 @@ void drawSkyBox() {
     glDisable( GL_TEXTURE_2D );
 }
 
+
+void initClouds() {
+    cout << "initClouds() " << endl;
+    
+    t_Clouds.resize(cloudLayerCount);
+    cloudsRot.resize(cloudLayerCount);
+    cloudlevels.resize(cloudLayerCount);
+    
+    
+    for (unsigned i = 0; i < cloudLayerCount; i++) {
+        t_Clouds[i] = CreatePerlinCloud(i, 512);
+        
+        cloudsRot[i] = ((rand()%1024)/1024)*3.141592*2;
+        
+        
+        float rat = (float) i / (float) cloudLayerCount;
+        cloudlevels[i] = Dot(0, a*(0.5 + (0.4*rat)), 0); // range [0.5 to 0.9)
+
+    }
+
+
+}
+
+
+
 void drawClouds() {
-    float a = skyboxMax;
-
-    Dot sky_bur = Dot(-a, a, a);
-    Dot sky_bul = Dot( a, a, a);
-    Dot sky_bdr = Dot(-a,-a, a); 
-    Dot sky_bdl = Dot( a,-a, a);
-
-    Dot sky_fur = Dot(-a, a,-a);
-    Dot sky_ful = Dot( a, a,-a);
-    Dot sky_fdr = Dot(-a,-a,-a);  
-    Dot sky_fdl = Dot( a,-a,-a);
-    
-    Dot cloudlevel1 = Dot(0, a*0.8, 0);
-    Dot cloudlevel2 = Dot(0, a*0.7, 0);
-    Dot cloudlevel3 = Dot(0, a*0.6, 0);
-    Dot cloudlevel4 = Dot(0, a*0.5, 0);
-    
     // Hand-wavy depth sorting.... with transparency, the order they are rendered matters, but that 
     // requires depth sorting.  Instead of that, we assume that since they are the same shade, with 
     // pretty much olnly variations in alpha, that it'll work well enough.
@@ -196,38 +210,170 @@ void drawClouds() {
     glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
     glDisable(GL_LIGHTING);
     glEnable(GL_TEXTURE_2D);
+
     
-    glBindTexture(GL_TEXTURE_2D, t_Clouds1);
-    glBegin(GL_QUADS); // Up Clouds
-        drawSkyBoxDot(sky_bul - cloudlevel1, 1.0, 0.0);
-        drawSkyBoxDot(sky_ful - cloudlevel1, 0.0, 0.0);
-        drawSkyBoxDot(sky_fur - cloudlevel1, 0.0, 1.0);
-        drawSkyBoxDot(sky_bur - cloudlevel1, 1.0, 1.0);  glEnd();
-    
-    //t_SkyBoxTop
-    glBindTexture(GL_TEXTURE_2D, t_Clouds2);
-    glBegin(GL_QUADS); // Up Clouds
-        drawSkyBoxDot(sky_bul - cloudlevel2, 1.0, 0.0);
-        drawSkyBoxDot(sky_ful - cloudlevel2, 0.0, 0.0);
-        drawSkyBoxDot(sky_fur - cloudlevel2, 0.0, 1.0);
-        drawSkyBoxDot(sky_bur - cloudlevel2, 1.0, 1.0);glEnd();
+    for (unsigned i = 0; i < cloudLayerCount; i++) {
+        glRotatef(cloudsRot[i], 0, 1, 0);
+        cloudsRot[i] += ((i%4) - 1.0)*2.0*0.02;
         
-    glBegin(GL_QUADS); // Up Clouds
-        drawSkyBoxDot(sky_bul - cloudlevel3, 1.0, 0.0);
-        drawSkyBoxDot(sky_ful - cloudlevel3, 0.0, 0.0);
-        drawSkyBoxDot(sky_fur - cloudlevel3, 0.0, 1.0);
-        drawSkyBoxDot(sky_bur - cloudlevel3, 1.0, 1.0);glEnd();
+        glBindTexture(GL_TEXTURE_2D, t_Clouds[i]);
+        glBegin(GL_QUADS);
+
+        drawSkyBoxDot(sky_bul - cloudlevels[i], 1.0, 0.0);
+        drawSkyBoxDot(sky_ful - cloudlevels[i], 0.0, 0.0);
+        drawSkyBoxDot(sky_fur - cloudlevels[i], 0.0, 1.0);
+        drawSkyBoxDot(sky_bur - cloudlevels[i], 1.0, 1.0);
+        glEnd();
         
-    glBegin(GL_QUADS); // Up Clouds
-        drawSkyBoxDot(sky_bul - cloudlevel4, 1.0, 0.0);
-        drawSkyBoxDot(sky_ful - cloudlevel4, 0.0, 0.0);
-        drawSkyBoxDot(sky_fur - cloudlevel4, 0.0, 1.0);
-        drawSkyBoxDot(sky_bur - cloudlevel4, 1.0, 1.0);glEnd();
-    
+        glRotatef(-cloudsRot[i], 0, 1, 0); // undo that rotation!
+    }
 
 
     glDepthMask(GL_TRUE);
     glEnable(GL_LIGHTING);
-    glDisable( GL_TEXTURE_2D );
+    glDisable(GL_TEXTURE_2D);
     
 }
+
+
+
+
+
+
+
+
+
+
+GLuint oceanTexture;
+void initOcean(){
+    oceanTexture = LoadTextureFromPNG("textures/sm64_ocean.png");
+    
+}
+
+
+
+void drawOcean(){
+
+    
+    Dot oceanlevel = Dot(0, a*1.1, 0);
+    Dot oceanlevelTrans1 = Dot(0, a*1.0, 0);
+    Dot oceanlevelTrans2 = Dot(0, a*1.05, 0);
+    
+    glTexEnvf(GL_TEXTURE_2D,GL_TEXTURE_ENV_MODE,GL_MODULATE);
+    glDepthMask(GL_FALSE);
+    
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+    glDisable(GL_LIGHTING);
+    glEnable(GL_TEXTURE_2D);
+    
+    
+    glBindTexture(GL_TEXTURE_2D, t_SkyBoxTop);
+    glBegin(GL_QUADS); // Up Clouds
+        drawSkyBoxDot(sky_bul - oceanlevel, 1.0, 0.0);
+        drawSkyBoxDot(sky_ful - oceanlevel, 0.0, 0.0);
+        drawSkyBoxDot(sky_fur - oceanlevel, 0.0, 1.0);
+        drawSkyBoxDot(sky_bur - oceanlevel, 1.0, 1.0); glEnd();
+        
+    glBindTexture(GL_TEXTURE_2D, t_SkyBoxTop);
+    glBegin(GL_QUADS); // Up Clouds
+        drawSkyBoxDot(sky_bul - oceanlevelTrans1, 1.0, 0.0);
+        drawSkyBoxDot(sky_ful - oceanlevelTrans1, 0.0, 0.0);
+        drawSkyBoxDot(sky_fur - oceanlevelTrans1, 0.0, 1.0);
+        drawSkyBoxDot(sky_bur - oceanlevelTrans1, 1.0, 1.0); glEnd();
+        
+    glBindTexture(GL_TEXTURE_2D, t_SkyBoxTop);
+    glBegin(GL_QUADS); // Up Clouds
+        drawSkyBoxDot(sky_bul - oceanlevelTrans2, 1.0, 0.0);
+        drawSkyBoxDot(sky_ful - oceanlevelTrans2, 0.0, 0.0);
+        drawSkyBoxDot(sky_fur - oceanlevelTrans2, 0.0, 1.0);
+        drawSkyBoxDot(sky_bur - oceanlevelTrans2, 1.0, 1.0); glEnd();
+        
+        
+    glDepthMask(GL_TRUE);
+    glEnable(GL_LIGHTING);
+    glDisable(GL_TEXTURE_2D);
+}
+
+
+
+
+
+
+void initSun() {
+    sunRot = 0;
+    sunDistance = skyboxMax*0.9;
+    sunTexture = LoadTextureFromPNG("textures/sun.png");
+    
+    sunX = 0;//cos(sunRot);
+    sunY = sin(-sunRot)*sunDistance;
+    sunZ = cos(-sunRot)*sunDistance;
+    sunPosDot = Dot(sunX, sunY, sunZ);
+}
+
+void drawSun() {
+    sunRot += 0.05; 
+    float sunRotInDegrees = sunRot*180/3.141592;
+    
+    
+    glTexEnvf(GL_TEXTURE_2D, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+    glDepthMask(GL_FALSE);
+    
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDisable(GL_LIGHTING);
+    glEnable(GL_TEXTURE_2D);
+    
+
+    //glTranslatef(sunDistance, 0, 0);
+    glRotatef(sunRotInDegrees, 1, 0, 0);
+
+    glBindTexture(GL_TEXTURE_2D, sunTexture);
+    glBegin(GL_QUADS);
+        //drawSkyBoxDot(sky_bul * 0.1 + sunPosDot, 1.0, 0.0);
+        //drawSkyBoxDot(sky_ful * 0.1 + sunPosDot, 0.0, 0.0);
+        //drawSkyBoxDot(sky_fur * 0.1 + sunPosDot, 0.0, 1.0);
+        //drawSkyBoxDot(sky_bur * 0.1 + sunPosDot, 1.0, 1.0);
+        
+        drawSkyBoxDot(sun_ul + Dot(0, 0, sunDistance), 1.0, 0.0);
+        drawSkyBoxDot(sun_ur + Dot(0, 0, sunDistance), 0.0, 0.0);
+        drawSkyBoxDot(sun_dr + Dot(0, 0, sunDistance), 0.0, 1.0);
+        drawSkyBoxDot(sun_dl + Dot(0, 0, sunDistance), 1.0, 1.0);
+     glEnd(); 
+
+    glRotatef(-sunRotInDegrees, 1, 0, 0);
+    //glTranslatef(-sunDistance, 0, 0);
+    
+    
+    // to be used by light point!
+    
+    /*sunPosDot = Dot(sunX, sunY, sunZ);
+    glBegin(GL_QUADS);
+    drawSkyBoxDot(sun_ul + sunPosDot, 1.0, 0.0);
+    drawSkyBoxDot(sun_ur + sunPosDot, 0.0, 0.0);
+    drawSkyBoxDot(sun_dr + sunPosDot, 0.0, 1.0);
+    drawSkyBoxDot(sun_dl + sunPosDot, 1.0, 1.0);
+    glEnd(); 
+    */
+    
+    glDepthMask(GL_TRUE);
+    glEnable(GL_LIGHTING);
+    glDisable( GL_TEXTURE_2D );
+}
+
+Dot returnSunPos() {
+    //sunX = 0;//cos(sunRot);
+    //sunY = sin(-sunRot)*sunDistance;
+    //unZ = cos(-sunRot)*sunDistance;
+    return Dot(0, sin(-sunRot)*sunDistance, cos(-sunRot)*sunDistance);
+}
+
+
+
+
+
+
+
+
+
+

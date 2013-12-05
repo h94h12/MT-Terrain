@@ -16,8 +16,8 @@ class Viewport {
 HeightMap h;
 
 void initializeDensityFunction(){
-    h = HeightMap(100); 
-    h.addPerlinNoise(20); 
+    h = HeightMap(100, rand()); 
+    h.addPerlinNoise(15); 
     for(int i = 0; i < 10; i++) h.erode(16); 
     h.smoothen(); 
 }
@@ -25,11 +25,15 @@ void initializeDensityFunction(){
 float density(Vector3f point) {
     int x = point[0]*10 + 40;  
     int y = point[2]*10 + 40; 
-    float height = h.heights[x * 100 + y]/200;
-    
-    //int x = (int)floorf((point[0] + 4)/8 * 64);
-    //int z = (int)floorf((point[2] + 4)/8 * 64);
-    //float height = (h.heights[x * 64 + z])/200 * 3;  
+    //float height = h.heights[x * 100 + y]/200;
+    float dist = point[0]*point[0] + point[2]*point[2];
+
+    float height = h.heights[x * 100 + y]/200; 
+    if (height < 0) height *= -1; 
+    if (dist - 3 > 0) height *= 0; 
+    else if (dist - 2.5 > 0) height *= 0.05;
+    else if (dist - 2 > 0) height *= 0.25; 
+    else if (dist - 1.5> 0) height *= 0.5; 
     return point(1) - height;
     //return pow(1.0f-sqrt(pow(point(0), 2.0f) + pow(point(1), 2.0f)), 2.0f) + pow(point(2), 2.0f) - .5;
     //return tan(3.14*point(0))-point(1);
@@ -39,8 +43,9 @@ float density(Vector3f point) {
 // Global Variables
 //****************************************************
 Viewport viewport;
-Vector3f gridMax = Vector3f(20, 4, 20); 
+Vector3f gridMax = Vector3f(4, 4, 4); 
 Vector3f stepsize = Vector3f(.1, .1, .1); 
+//Vector3f stepsize = Vector3f(.05, .05, .05); 
 vector_tri tris;
 
 Grid *grid;
@@ -65,6 +70,14 @@ void drawTris() {
     glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffusion);
     glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
     glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
+    
+    
+    Dot sun = returnSunPos();
+    light_position[0] = sun(0)*10;
+    light_position[1] = sun(1)*10;
+    light_position[2] = sun(2)*10;
+    //cout << sun(0) << endl;
+    //light_position[2] = -10.0f;
 
     glLightfv(GL_LIGHT0, GL_POSITION, light_position);
     glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
@@ -142,12 +155,19 @@ void drawRain(){
    
 }
 
+
+
 void initRain(){
     srand(time(NULL)); 
     for(int i = 0; i < numdrops; i ++){
         rain[i] = Vector3f((rand() % 500)-250, (rand() % 500) -250, (rand() % 500) -250); 
     }  
 }
+
+
+
+
+
 
 void reshape(int w, int h) {
 	viewport.w = w;
@@ -172,14 +192,18 @@ void display(void) {
 	//}
 
 	glPushMatrix();
-	glTranslatef(xtrans, ytrans, ztrans);
+	
 	glRotatef(rotUD, 1, 0, 0);
 	glRotatef(rotLR, 0, 1, 0);
 	glRotatef(rotQE, 0, 0, 1);
+    
+    glTranslatef(xtrans, ytrans, ztrans);
 
     drawSkyBox();
 	drawTris();
     if (showrain) drawRain();    
+    drawSun(); // behind clouds?
+    //drawOcean();
     drawClouds(); // clouds have transparency, so draw last!
 
 	glPopMatrix();
@@ -191,6 +215,7 @@ void idle (void) {
 }
 
 void processSpecialKeys(int key, int x, int y) {
+   // cout << "key:" << key << endl;
 	switch(key) {
 	case GLUT_KEY_RIGHT:
 		if (glutGetModifiers() == GLUT_ACTIVE_SHIFT) {
@@ -214,7 +239,9 @@ void processSpecialKeys(int key, int x, int y) {
 		}
 		break;
 	case GLUT_KEY_DOWN:
+         //cout << "down!" << endl;
 		if (glutGetModifiers() == GLUT_ACTIVE_SHIFT) {
+            //cout << "down shift!" << endl;
 			ytrans -= .15f*(focus/60.0);
 		} else {
 			rotUD += 1.0f*(focus/60.0);
@@ -261,49 +288,54 @@ void keyboard(unsigned char key, int x, int y) {
     case 'r':
         showrain = !showrain; 
         break; 
-    
-        case 's':
-                flat = !flat;
-                break;
-        case 'z':
-                ztrans += .15f*(focus/60.0);
-                break;
-        case 'c':
-                ztrans -= .15f*(focus/60.0);
-                break;
-        case 'w':
-                wireframe = !wireframe;
-                break;
-        case '+':
-                focus *= 0.95f;
-                if (focus < 0.1f) {
-                        focus = 0.1f;
-                }
-                glMatrixMode(GL_PROJECTION);
-                glLoadIdentity();
-                gluPerspective(focus, (GLfloat) viewport.w/ (GLfloat) viewport.h, 1.0, 40.0);
-                glMatrixMode(GL_MODELVIEW);
-                break;
-        case '-':
-                focus *= 1.0f/0.95f;
-                if (focus > 89.1f) {
-                        focus = 89.99f;
-                }
-                glMatrixMode(GL_PROJECTION);
-                glLoadIdentity();
-                gluPerspective(focus, (GLfloat) viewport.w/ (GLfloat) viewport.h, 1.0, 40.0);
-                glMatrixMode(GL_MODELVIEW);
-                break;
-        case 'q':
-                rotQE += 1.0f*(focus/60.0);
-                break;
-        case 'e':
-                rotQE -= 1.0f*(focus/60.0);
-                break;
-        case 27:
-                exit(0);
-                break;
+    case 's':
+        flat = !flat;
+        break;
+    case 'z':
+        ztrans += .15f*(focus/60.0);
+        break;
+    case 'c':
+        ztrans -= .15f*(focus/60.0);
+        break;
+    case 'w':
+        wireframe = !wireframe;
+        break;
+    case '+':
+        focus *= 0.95f;
+        if (focus < 0.1f) {
+                focus = 0.1f;
         }
+        glMatrixMode(GL_PROJECTION);
+        glLoadIdentity();
+        gluPerspective(focus, (GLfloat) viewport.w/ (GLfloat) viewport.h, 1.0, 40.0);
+        glMatrixMode(GL_MODELVIEW);
+        break;
+    case '-':
+        focus *= 1.0f/0.95f;
+        if (focus > 89.1f) {
+                focus = 89.99f;
+        }
+        glMatrixMode(GL_PROJECTION);
+        glLoadIdentity();
+        gluPerspective(focus, (GLfloat) viewport.w/ (GLfloat) viewport.h, 1.0, 40.0);
+        glMatrixMode(GL_MODELVIEW);
+            break;
+    case 'q':
+        rotQE += 1.0f*(focus/60.0);
+        break;
+    case 'e':
+        rotQE -= 1.0f*(focus/60.0);
+        break;
+    case 'n': // temp
+        ytrans -= .15f*(focus/60.0);
+        break;
+    case 'm': // temp
+        ytrans += .15f*(focus/60.0);
+        break;
+    case 27:
+        exit(0);
+        break;
+    }
 }
 
 void loadData(string file) {
@@ -327,6 +359,8 @@ void test(){
 }
 
 int main(int argc, char* argv[]) {
+    
+    cout << "start" << endl;
 	viewport.h = 800;
 	viewport.w = 800;
 
@@ -354,8 +388,13 @@ int main(int argc, char* argv[]) {
 	glutInitWindowPosition(0,0);
 	glutCreateWindow("Final Project");
 
+    initClouds();
+    initSun();
+    initSkyBox(); 
     initRain(); 
-    initializeSkyBox(); // has to be done after glutinit
+    initOcean();
+    
+
 	
 	glClearColor(0, 0, 0, 0);
 	
