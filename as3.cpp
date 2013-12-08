@@ -356,8 +356,6 @@ void keyboard(unsigned char key, int x, int y) {
     case 'e':
         rotQE -= 1.0f*(focus/60.0);
         break;
-    case 'n': // temp
-        night = true;
     case 27:
         exit(0);
         break;
