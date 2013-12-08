@@ -6,6 +6,16 @@
 // Some Classes and Global Standalone Functions
 //****************************************************
 
+#define GRID_X_MAX 5
+#define GRID_Y_MAX 5
+#define GRID_Z_MAX 5
+
+#define STEP_X 0.1
+#define STEP_Y 0.1
+#define STEP_Z 0.1
+
+#define HEIGHTMAP_SIZE 100
+
 class Viewport;
 
 class Viewport {
@@ -15,26 +25,30 @@ class Viewport {
 
 HeightMap h;
 
+Vector3f gridMax = Vector3f(GRID_X_MAX, GRID_Y_MAX, GRID_Z_MAX); 
+Vector3f stepsize = Vector3f(STEP_X, STEP_Y, STEP_Z); 
+
 void initializeDensityFunction(){
-    h = HeightMap(100, rand()); 
+    h = HeightMap(HEIGHTMAP_SIZE, rand()); 
     h.addPerlinNoise(15); 
     for(int i = 0; i < 10; i++) h.erode(16); 
     h.smoothen(); 
 }
 
 float density(Vector3f point) {
-    int x = point[0]*10 + 40;  
-    int y = point[2]*10 + 40; 
-    //float height = h.heights[x * 100 + y]/200;
+    int x = point[0]*(1/STEP_X) + GRID_X_MAX * (1/STEP_X);  
+    int y = point[2]*(1/STEP_Z) + GRID_Z_MAX * (1/STEP_Z); 
     float dist = point[0]*point[0] + point[2]*point[2];
-
-    float height = h.heights[x * 100 + y]/200; 
+ 
+    float height = h.heights[x * HEIGHTMAP_SIZE + y]/200; 
     if (height < 0) height *= -1; 
-    if (dist - 3 > 0) height *= 0; 
-    else if (dist - 2.5 > 0) height *= 0.05;
-    else if (dist - 2 > 0) height *= 0.25; 
-    else if (dist - 1.5> 0) height *= 0.5; 
+    if (dist - (GRID_X_MAX - 1) > 0) height *= 0; 
+    else if (dist - (GRID_X_MAX - 1.5) > 0) height *= 0.05;
+    else if (dist - (GRID_X_MAX - 2) > 0) height *= 0.25; 
+    else if (dist - (GRID_X_MAX - 2.5)> 0) height *= 0.5; 
+ 
     return point(1) - height;
+    
     //return pow(1.0f-sqrt(pow(point(0), 2.0f) + pow(point(1), 2.0f)), 2.0f) + pow(point(2), 2.0f) - .5;
     //return tan(3.14*point(0))-point(1);
 }
@@ -43,9 +57,11 @@ float density(Vector3f point) {
 // Global Variables
 //****************************************************
 Viewport viewport;
-Vector3f gridMax = Vector3f(4, 4, 4); 
-Vector3f stepsize = Vector3f(.1, .1, .1); 
+
+//Vector3f gridMax = Vector3f(4, 4, 4); 
+//Vector3f stepsize = Vector3f(.1, .1, .1); 
 //Vector3f stepsize = Vector3f(.05, .05, .05); 
+
 vector_tri tris;
 
 Grid *grid;
@@ -205,6 +221,12 @@ void display(void) {
     drawSun(); // behind clouds?
     //drawOcean();
     drawClouds(); // clouds have transparency, so draw last!
+    
+    //need to draw reflection
+    /*glMatrixMode(GL_MODELVIEW);
+    glRotatef(180, 1, 0, 0); 
+    glTranslatef(0, -2, 0); 
+    drawTris();*/ 
 
 	glPopMatrix();
 	glutSwapBuffers();
