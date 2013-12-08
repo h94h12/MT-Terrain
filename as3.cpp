@@ -30,7 +30,7 @@ Vector3f stepsize = Vector3f(STEP_X, STEP_Y, STEP_Z);
 
 void initializeDensityFunction(){
     h = HeightMap(HEIGHTMAP_SIZE, rand()); 
-    h.addPerlinNoise(15); 
+    h.addPerlinNoise(16); 
     for(int i = 0; i < 10; i++) h.erode(16); 
     h.smoothen(); 
 }

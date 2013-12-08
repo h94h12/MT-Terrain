@@ -9,7 +9,7 @@ std::vector<float> cloudsRot;
 std::vector<Dot> cloudlevels;
 
 
-float skyboxMax = 20.0;
+float skyboxMax = 15.0;
 float a = skyboxMax;
 
 
