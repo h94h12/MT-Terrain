@@ -122,7 +122,7 @@ GLuint CreatePerlinCloud(unsigned indx, unsigned size, bool blue) {
 
 void initSkyBox() {
     cout << "initSkyBox() " << endl;
-    t_SkyBoxTop = LoadTextureFromPNG("textures/sm64_ocean.png");
+    t_SkyBoxTop = LoadTextureFromPNG("textures/skybox_texture.png");
 
 }
 
@@ -140,42 +140,43 @@ void drawSkyBox() {
     
     
     glBegin(GL_QUADS); // Back
-        drawSkyBoxDot(sky_bur, 1.0, 0.0);
-        drawSkyBoxDot(sky_bul, 0.0, 0.0);
-        drawSkyBoxDot(sky_bdl, 0.0, 1.0);
-        drawSkyBoxDot(sky_bdr, 1.0, 1.0);
+        drawSkyBoxDot(sky_bur, 0.75,  1.0/3.0);
+        drawSkyBoxDot(sky_bul, 1.00, 1.0/3.0);
+        drawSkyBoxDot(sky_bdl, 1.00, 2.0/3.0);
+        drawSkyBoxDot(sky_bdr, 0.75, 2.0/3.0);
 
     glEnd(); glBegin(GL_QUADS); // Front
-        drawSkyBoxDot(sky_fur, 1.0, 0.0);
-        drawSkyBoxDot(sky_ful, 0.0, 0.0);
-        drawSkyBoxDot(sky_fdl, 0.0, 1.0);
-         drawSkyBoxDot(sky_fdr, 1.0, 1.0);
+        drawSkyBoxDot(sky_fur, .5, 1.0/3.0);
+        drawSkyBoxDot(sky_ful, 0.25, 1.0/3.0);
+        drawSkyBoxDot(sky_fdl, 0.25, 2.0/3.0);
+        drawSkyBoxDot(sky_fdr, .5, 2.0/3.0);
     
     glEnd(); glBegin(GL_QUADS); // Left
-        drawSkyBoxDot(sky_bul, 1.0, 0.0);
-        drawSkyBoxDot(sky_ful, 0.0, 0.0);
-        drawSkyBoxDot(sky_fdl, 0.0, 1.0);
-        drawSkyBoxDot(sky_bdl, 1.0, 1.0);
+        drawSkyBoxDot(sky_bul, 0.0, 1.0/3.0);
+        drawSkyBoxDot(sky_ful, 0.25, 1.0/3.0);
+        drawSkyBoxDot(sky_fdl, 0.25, 2.0/3.0);
+        drawSkyBoxDot(sky_bdl, 0.0, 2.0/3.0);
         
      glEnd(); glBegin(GL_QUADS); // Right
-        drawSkyBoxDot(sky_bur, 1.0, 0.0);
-        drawSkyBoxDot(sky_fur, 0.0, 0.0);
-        drawSkyBoxDot(sky_fdr, 0.0, 1.0);
-        drawSkyBoxDot(sky_bdr, 1.0, 1.0);
+        drawSkyBoxDot(sky_bur, 0.75, 1.0/3.0);
+        drawSkyBoxDot(sky_fur, 0.5, 1.0/3.0);
+        drawSkyBoxDot(sky_fdr, 0.5, 2.0/3.0);
+        drawSkyBoxDot(sky_bdr, 0.75, 2.0/3.0);
     
     glEnd(); glBegin(GL_QUADS); // Down
-        drawSkyBoxDot(sky_bdl, 1.0, 0.0);
-        drawSkyBoxDot(sky_fdl, 0.0, 0.0);
-        drawSkyBoxDot(sky_fdr, 0.0, 1.0);
-        drawSkyBoxDot(sky_bdr, 1.0, 1.0);
+        drawSkyBoxDot(sky_bdl, 0.25, 1.0);
+        drawSkyBoxDot(sky_fdl, 0.25, 2.0/3.0);
+        drawSkyBoxDot(sky_fdr, 0.5, 2.0/3.0);
+        drawSkyBoxDot(sky_bdr, 0.5, 1.0);
 
     glEnd(); glBegin(GL_QUADS); // Up
-        drawSkyBoxDot(sky_bul, 1.0, 0.0);
-        drawSkyBoxDot(sky_ful, 0.0, 0.0);
-        drawSkyBoxDot(sky_fur, 0.0, 1.0);
-        drawSkyBoxDot(sky_bur, 1.0, 1.0);
+        drawSkyBoxDot(sky_bul, 0.25, 0.0/3.0);
+        drawSkyBoxDot(sky_ful, 0.25, 1.0/3.0);
+        drawSkyBoxDot(sky_fur, 0.5, 1/3.0);
+        drawSkyBoxDot(sky_bur, 0.5, 0.0/3.0);
         
     glEnd();
+
     glEnable(GL_LIGHTING);
     glDisable( GL_TEXTURE_2D );
 }
@@ -336,7 +337,7 @@ void initSun() {
 }
 
 void drawSun() {
-    sunRot += 0.05; 
+    sunRot += 0.005; 
     float sunRotInDegrees = sunRot*180/3.141592;
     
     

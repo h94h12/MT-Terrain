@@ -218,11 +218,10 @@ void display(void) {
 
 	glPushMatrix();
 	
+    glTranslatef(xtrans, ytrans, ztrans);    
 	glRotatef(rotUD, 1, 0, 0);
 	glRotatef(rotLR, 0, 1, 0);
 	glRotatef(rotQE, 0, 0, 1);
-    
-    glTranslatef(xtrans, ytrans, ztrans);
 
     drawSkyBox();
 	drawTris();
@@ -358,11 +357,7 @@ void keyboard(unsigned char key, int x, int y) {
         rotQE -= 1.0f*(focus/60.0);
         break;
     case 'n': // temp
-        ytrans -= .15f*(focus/60.0);
-        break;
-    case 'm': // temp
-        ytrans += .15f*(focus/60.0);
-        break;
+        night = true;
     case 27:
         exit(0);
         break;
