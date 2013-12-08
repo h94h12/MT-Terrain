@@ -25,6 +25,8 @@ class Viewport {
 
 HeightMap h;
 
+GLuint grassTexture;
+
 Vector3f gridMax = Vector3f(GRID_X_MAX, GRID_Y_MAX, GRID_Z_MAX); 
 Vector3f stepsize = Vector3f(STEP_X, STEP_Y, STEP_Z); 
 
@@ -42,10 +44,11 @@ float density(Vector3f point) {
  
     float height = h.heights[x * HEIGHTMAP_SIZE + y]/200; 
     if (height < 0) height *= -1; 
-    if (dist - (GRID_X_MAX - 1) > 0) height *= 0; 
-    else if (dist - (GRID_X_MAX - 1.5) > 0) height *= 0.05;
-    else if (dist - (GRID_X_MAX - 2) > 0) height *= 0.25; 
-    else if (dist - (GRID_X_MAX - 2.5)> 0) height *= 0.5; 
+    if (dist - (GRID_X_MAX - 0.1) > 0) height = -1; 
+    else if (dist - (GRID_X_MAX - 0.2) > 0) height = -0.4;
+    else if (dist - (GRID_X_MAX - 0.4) > 0) height = -0.1;
+    else if (dist - (GRID_X_MAX - 0.7)> 0) height *= 0.1; 
+    else if (dist - (GRID_X_MAX - 1.0)> 0) height *= 0.5; 
  
     return point(1) - height;
     
@@ -73,9 +76,9 @@ GLfloat mat_shininess[] = {128.0f};
 GLfloat mat_ambient[] = {0.0f, 0.3f, 0.0f, 1.0f};
 GLfloat mat_diffusion[] = {0.0f, 0.3f, 0.0f, 1.0f};
 GLfloat light_position[] = {5.0f, 1.0f, 5.0f, 1.0f};
-GLfloat light_diffuse[] = {.3f, 0.5f, 0.2f, 1.0f};
+GLfloat light_diffuse[] = {.5f, 0.5f, 0.4f, 1.0f};
 GLfloat light_specular[] = {0.0f, 0.0f, 0.0f, 0.0f};
-GLfloat light_ambient[] = {0.0f, 0.0f, 0.0f, 1.0f};
+GLfloat light_ambient[] = {0.1f, 0.1f, 0.1f, 1.0f};
 
 GLint fogMode; 
 Vector3f* rain; 
@@ -99,9 +102,15 @@ void drawTris() {
     glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
     glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
     glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
+    
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, grassTexture);
+    
 	for (int i = 0; i < (int)tris.size(); i++) {
 		tris[i].draw();
 	}
+    
+    glDisable(GL_TEXTURE_2D);
 }
 
 //****************************************************
@@ -219,7 +228,7 @@ void display(void) {
 	drawTris();
     if (showrain) drawRain();    
     drawSun(); // behind clouds?
-    //drawOcean();
+    drawOcean();
     drawClouds(); // clouds have transparency, so draw last!
     
     //need to draw reflection
@@ -415,8 +424,11 @@ int main(int argc, char* argv[]) {
     initSkyBox(); 
     initRain(); 
     initOcean();
+    //initGrassTexture();
+    grassTexture = LoadTextureFromPNG("textures/grass.png");
     
-
+    //grassTexture = LoadTextureFromPNG("textures/sm64_ocean.png");
+    
 	
 	glClearColor(0, 0, 0, 0);
 	

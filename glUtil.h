@@ -58,6 +58,7 @@ extern vector_tri tris;
 GLuint AddTextureToOpenGL(unsigned w, unsigned h, void * ptr);
 GLuint LoadTextureFromPNG(const char * filename);
 
+
 class Tetrahedron {
 public:
 	Vector3f *v1, *v2, *v3, *v4;

@@ -40,7 +40,7 @@ Dot sun_dl = Dot(skyboxMax/2,  -skyboxMax/2, 0);
 
 
 // openGL texturing based off tutorial from http://www.nullterminator.net/gltexture.html
-GLuint CreatePerlinCloud(unsigned indx, unsigned size) {
+GLuint CreatePerlinCloud(unsigned indx, unsigned size, bool blue) {
     unsigned width = size, height = size;
     std::vector<unsigned char> image;
     image.reserve(width * height * 4);
@@ -79,12 +79,19 @@ GLuint CreatePerlinCloud(unsigned indx, unsigned size) {
 
            
             float pn2 = 255 - ((pn-4)*25);
-            pn2 *= 2.0/(float) cloudLayerCount; // so if there's a lot of clouds, each one is less visible
+            
 
-
-            image[4 * width * y + 4 * x + 0] = 255.0-pn;
-            image[4 * width * y + 4 * x + 1] = 255.0-pn;
-            image[4 * width * y + 4 * x + 2] = 255.0-(pn*0.7);
+            if (blue) {
+                //pn2 *= 2.0;
+                image[4 * width * y + 4 * x + 0] = std::max(0.0, 55.0-pn*8);
+                image[4 * width * y + 4 * x + 1] = std::max(0.0, 55.0-pn*8);
+                image[4 * width * y + 4 * x + 2] = 255.0-(pn*0.7);
+            } else {
+                pn2 *= 3.0/(float) cloudLayerCount; // so if there's a lot of clouds, each one is less visible
+                image[4 * width * y + 4 * x + 0] = 255.0-pn;
+                image[4 * width * y + 4 * x + 1] = 255.0-pn;
+                image[4 * width * y + 4 * x + 2] = 255.0-(pn*0.7);
+            }
             image[4 * width * y + 4 * x + 3] = std::min((float) 255,  (std::max((float) 0, pn2)));
             
             // ease out
@@ -183,7 +190,7 @@ void initClouds() {
     
     
     for (unsigned i = 0; i < cloudLayerCount; i++) {
-        t_Clouds[i] = CreatePerlinCloud(i, 512);
+        t_Clouds[i] = CreatePerlinCloud(i, 512, false);
         
         cloudsRot[i] = ((rand()%1024)/1024)*3.141592*2;
         
@@ -246,9 +253,17 @@ void drawClouds() {
 
 
 GLuint oceanTexture;
+GLuint sandTexture;
+GLuint wavesTexture0;
+GLuint wavesTexture1;
+GLuint wavesTexture2;
 void initOcean(){
     oceanTexture = LoadTextureFromPNG("textures/sm64_ocean.png");
-    
+    sandTexture = LoadTextureFromPNG("textures/sand.png");
+    wavesTexture0 = CreatePerlinCloud(0, 512, true);
+    wavesTexture1 = CreatePerlinCloud(1, 512, true);
+    wavesTexture2 = CreatePerlinCloud(2, 512, true);
+
 }
 
 
@@ -256,9 +271,10 @@ void initOcean(){
 void drawOcean(){
 
     
-    Dot oceanlevel = Dot(0, a*1.1, 0);
-    Dot oceanlevelTrans1 = Dot(0, a*1.0, 0);
-    Dot oceanlevelTrans2 = Dot(0, a*1.05, 0);
+    Dot oceanlevel = Dot(0, a*1.04, 0);
+    Dot oceanlevelTrans0 = Dot(0, a*1.01, 0);
+    Dot oceanlevelTrans1 = Dot(0, a*1.02, 0);
+    Dot oceanlevelTrans2 = Dot(0, a*1.03, 0);
     
     glTexEnvf(GL_TEXTURE_2D,GL_TEXTURE_ENV_MODE,GL_MODULATE);
     glDepthMask(GL_FALSE);
@@ -269,27 +285,34 @@ void drawOcean(){
     glEnable(GL_TEXTURE_2D);
     
     
-    glBindTexture(GL_TEXTURE_2D, t_SkyBoxTop);
-    glBegin(GL_QUADS); // Up Clouds
+    glBindTexture(GL_TEXTURE_2D, sandTexture);
+    glBegin(GL_QUADS); 
         drawSkyBoxDot(sky_bul - oceanlevel, 1.0, 0.0);
         drawSkyBoxDot(sky_ful - oceanlevel, 0.0, 0.0);
         drawSkyBoxDot(sky_fur - oceanlevel, 0.0, 1.0);
         drawSkyBoxDot(sky_bur - oceanlevel, 1.0, 1.0); glEnd();
+      
+    glBindTexture(GL_TEXTURE_2D, wavesTexture0);
+    glBegin(GL_QUADS); 
+        drawSkyBoxDot(sky_bul - oceanlevelTrans0, 1.0, 0.0);
+        drawSkyBoxDot(sky_ful - oceanlevelTrans0, 0.0, 0.0);
+        drawSkyBoxDot(sky_fur - oceanlevelTrans0, 0.0, 1.0);
+        drawSkyBoxDot(sky_bur - oceanlevelTrans0, 1.0, 1.0); glEnd();
         
-    glBindTexture(GL_TEXTURE_2D, t_SkyBoxTop);
-    glBegin(GL_QUADS); // Up Clouds
+    glBindTexture(GL_TEXTURE_2D, wavesTexture1);
+    glBegin(GL_QUADS); 
         drawSkyBoxDot(sky_bul - oceanlevelTrans1, 1.0, 0.0);
         drawSkyBoxDot(sky_ful - oceanlevelTrans1, 0.0, 0.0);
         drawSkyBoxDot(sky_fur - oceanlevelTrans1, 0.0, 1.0);
         drawSkyBoxDot(sky_bur - oceanlevelTrans1, 1.0, 1.0); glEnd();
         
-    glBindTexture(GL_TEXTURE_2D, t_SkyBoxTop);
-    glBegin(GL_QUADS); // Up Clouds
+    glBindTexture(GL_TEXTURE_2D, wavesTexture2);
+    glBegin(GL_QUADS); 
         drawSkyBoxDot(sky_bul - oceanlevelTrans2, 1.0, 0.0);
         drawSkyBoxDot(sky_ful - oceanlevelTrans2, 0.0, 0.0);
         drawSkyBoxDot(sky_fur - oceanlevelTrans2, 0.0, 1.0);
         drawSkyBoxDot(sky_bur - oceanlevelTrans2, 1.0, 1.0); glEnd();
-        
+      
         
     glDepthMask(GL_TRUE);
     glEnable(GL_LIGHTING);

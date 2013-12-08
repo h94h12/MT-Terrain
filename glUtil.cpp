@@ -1,5 +1,6 @@
 #include "glUtil.h"
 
+
 Triangle::Triangle(Vector3f v1, Vector3f v2, Vector3f v3) {
     this->v1 = v1;
     this->v2 = v2;
@@ -20,9 +21,13 @@ void Triangle::draw() {
             normal *= -1;
         }
         glNormal3f(normal(0), normal(1), normal(2));
-        glVertex3f(v1(0), v1(1), v1(2));
-        glVertex3f(v2(0), v2(1), v2(2));
-        glVertex3f(v3(0), v3(1), v3(2));
+        glTexCoord2f(v1(0), v1(2)); glVertex3f(v1(0), v1(1), v1(2));
+        glTexCoord2f(v2(0), v2(2)); glVertex3f(v2(0), v2(1), v2(2));
+        glTexCoord2f(v3(0), v3(2)); glVertex3f(v3(0), v3(1), v3(2));
+        
+        //glTexCoord2f(v1(0)*0.125 + 0, v1(2)*0.125 + 0); glVertex3f(v1(0), v1(1), v1(2));
+        //glTexCoord2f(v2(0)*0.125 + 0, v2(2)*0.125 + 0); glVertex3f(v2(0), v2(1), v2(2));
+        //glTexCoord2f(v3(0)*0.125 + 0, v3(2)*0.125 + 0); glVertex3f(v3(0), v3(1), v3(2));
         glEnd();
     }
 }
