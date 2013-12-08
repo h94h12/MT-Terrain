@@ -13,6 +13,7 @@ float skyboxMax = 20.0;
 float a = skyboxMax;
 
 
+
 float sunRot, sunX, sunY, sunZ;
 GLuint sunTexture;
 float sunDistance;
