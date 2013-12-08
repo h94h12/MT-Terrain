@@ -49,6 +49,9 @@ using namespace std;
 class Grid;
 class Triangle;
 
+
+void initTerrainTextures();
+
 typedef list<GLuint> ShaderObjList;
 typedef vector<Triangle/*, Eigen::aligned_allocator<Eigen::Vector3f> */> vector_tri;
 

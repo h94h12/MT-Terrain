@@ -25,7 +25,7 @@ class Viewport {
 
 HeightMap h;
 
-GLuint grassTexture;
+//GLuint grassTexture;
 
 Vector3f gridMax = Vector3f(GRID_X_MAX, GRID_Y_MAX, GRID_Z_MAX); 
 Vector3f stepsize = Vector3f(STEP_X, STEP_Y, STEP_Z); 
@@ -104,7 +104,7 @@ void drawTris() {
     glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
     
     glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, grassTexture);
+    //glBindTexture(GL_TEXTURE_2D, grassTexture);
     
 	for (int i = 0; i < (int)tris.size(); i++) {
 		tris[i].draw();
@@ -424,8 +424,8 @@ int main(int argc, char* argv[]) {
     initSkyBox(); 
     initRain(); 
     initOcean();
-    //initGrassTexture();
-    grassTexture = LoadTextureFromPNG("textures/grass.png");
+    initTerrainTextures();
+    //grassTexture = LoadTextureFromPNG("textures/grass.png");
     
     //grassTexture = LoadTextureFromPNG("textures/sm64_ocean.png");
     

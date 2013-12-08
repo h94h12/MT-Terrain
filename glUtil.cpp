@@ -7,6 +7,16 @@ Triangle::Triangle(Vector3f v1, Vector3f v2, Vector3f v3) {
     this->v3 = v3;
 }
 
+
+GLuint rockTexture3; // locally used only
+GLuint grassTexture3;
+void initTerrainTextures() {
+    grassTexture3 = LoadTextureFromPNG("textures/grass.png");
+    rockTexture3 = LoadTextureFromPNG("textures/rock.png");
+    
+    
+}
+
 void Triangle::draw() {
     if (wireframe) {
         glBegin(GL_LINE_LOOP);
@@ -15,11 +25,26 @@ void Triangle::draw() {
         glVertex3f(v3(0), v3(1), v3(2));
         glEnd();
     } else {
+        // Texturing:
+        double height = abs(v1(1)) + abs(v2(1)) + abs(v3(1));
+        double mmin = min(min(v1(1), v2(1)), v3(1));
+        double mmax = max(max(v1(1), v2(1)), v3(1));
+        double dist = mmax - mmin;
+        
+        if (dist < 0.05) {
+            glBindTexture(GL_TEXTURE_2D, grassTexture3);
+        } else {
+            glBindTexture(GL_TEXTURE_2D, rockTexture3);
+        }
+        
         glBegin(GL_TRIANGLES);
         Vector3f normal = (v1-v2).cross(v1-v3);
         if (normal.dot(Vector3f(0, 1, 0)) < 0) {
             normal *= -1;
         }
+
+        
+        
         glNormal3f(normal(0), normal(1), normal(2));
         glTexCoord2f(v1(0), v1(2)); glVertex3f(v1(0), v1(1), v1(2));
         glTexCoord2f(v2(0), v2(2)); glVertex3f(v2(0), v2(1), v2(2));
