@@ -14,6 +14,7 @@ GLuint sandTexture;
 GLuint sandrock1Texture; // fades from sand to rock
 GLuint sandrock2Texture;
 GLuint sandrock3Texture;
+
 void initTerrainTextures() {
     grassTexture = LoadTextureFromPNG("textures/grass.png");
     rockTexture = LoadTextureFromPNG("textures/rock.png");

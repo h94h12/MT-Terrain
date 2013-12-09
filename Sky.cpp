@@ -102,21 +102,7 @@ GLuint CreatePerlinCloud(unsigned indx, unsigned size, bool blue) {
         }
     }
   
-    GLuint texture;
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
-    glTexEnvf( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE );
-
-    glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-
-    glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    
-    void * ptr = &image[0];
-    gluBuild2DMipmaps(GL_TEXTURE_2D, 4, width, height, GL_RGBA, GL_UNSIGNED_BYTE, ptr);
-
-    return texture;
-    //return AddTextureToOpenGL(width, height, &image[0]);
+    return AddTextureToOpenGL(width, height, &image[0]);
 }
 
 void initSkyBox() {
@@ -133,7 +119,7 @@ void drawSkyBox() {
     
     //cout << "t_SkyBoxTop" << t_SkyBoxTop << endl;
     
-    glDisable(GL_LIGHTING);
+    //glDisable(GL_LIGHTING);
     glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, t_SkyBoxTop);
     
@@ -216,7 +202,7 @@ void drawClouds() {
     
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
-    glDisable(GL_LIGHTING);
+    //glDisable(GL_LIGHTING);
     glEnable(GL_TEXTURE_2D);
 
     
@@ -279,7 +265,7 @@ void drawOcean(){
     
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
-    glDisable(GL_LIGHTING);
+    //glDisable(GL_LIGHTING);
     glEnable(GL_TEXTURE_2D);
     
     
@@ -325,7 +311,7 @@ void drawOcean(){
 
 void initSun() {
     sunRot = 0;
-    sunDistance = skyboxMax*0.9;
+    sunDistance = skyboxMax*0.85;
     sunTexture = LoadTextureFromPNG("textures/sun.png");
     
     sunX = 0;//cos(sunRot);
@@ -341,9 +327,18 @@ Dot sun_dr = Dot(skyboxMax/2,   skyboxMax/2, 0);
 Dot sun_dl = Dot(skyboxMax/2,  -skyboxMax/2, 0);
 
 
+void updateSunRot(float sr) {
+    sunRot = sr;
+    while (sunRot > 3.14159*2) {
+        sunRot -= 3.14159*2;
+    }
+    while (sunRot < 0) {
+        sunRot += 3.14159*2;
+    }
+}
+
 void drawSun() {
-    //sunRot += 0.05; 
-    sunRot = 5.45;
+    updateSunRot(sunRot + 0.01);
     float sunRotInDegrees = sunRot*180/3.141592;
     
     
@@ -377,6 +372,12 @@ void drawSun() {
     glEnable(GL_LIGHTING);
     glDisable( GL_TEXTURE_2D );
 }
+
+float returnSunRot() {
+    return sunRot;
+}
+
+
 
 Dot returnSunPos() {
     //sunX = 0;//cos(sunRot);

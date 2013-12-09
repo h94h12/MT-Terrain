@@ -13,6 +13,7 @@
 #define STEP_X 0.1
 #define STEP_Y 0.1
 #define STEP_Z 0.1
+#define pi 3.14159
 
 #define HEIGHTMAP_SIZE (int)(2 * GRID_X_MAX * (1/STEP_X))
 
@@ -84,10 +85,11 @@ GLfloat mat_specular[] = {0.8f, 0.8f, 0.8f, 0.0f};
 GLfloat mat_shininess[] = {128.0f};
 GLfloat mat_ambient[] = {0.0f, 0.3f, 0.0f, 1.0f};
 GLfloat mat_diffusion[] = {0.0f, 0.3f, 0.0f, 1.0f};
+
 GLfloat light_position[] = {5.0f, 1.0f, 5.0f, 1.0f};
 GLfloat light_diffuse[] = {.5f, 0.5f, 0.4f, 1.0f};
-GLfloat light_specular[] = {0.0f, 0.0f, 0.0f, 0.0f};
-GLfloat light_ambient[] = {0.1f, 0.1f, 0.1f, 1.0f};
+GLfloat light_specular[] = {0.1f, 0.1f, 0.1f, 0.0f};
+GLfloat light_ambient[] = {0.07f, 0.02f, 0.05f, 1.0f};
 
 bool mouseButtony_down_left = false, mouseButtonx_down = false, mouseButtony_down_right = false; 
 int mouse_yClick_left = 0, mouse_xClick = 0,mouse_yClick_right = 0;  
@@ -95,6 +97,8 @@ int mouse_yClick_left = 0, mouse_xClick = 0,mouse_yClick_right = 0;
 GLint fogMode; 
 Vector3f* rain; 
 int numdrops = 1000; 
+
+
 
 void drawTris() {
     glMaterialfv(GL_FRONT, GL_AMBIENT, mat_ambient);
@@ -107,6 +111,27 @@ void drawTris() {
     light_position[0] = sun(0)*10;
     light_position[1] = sun(1)*10;
     light_position[2] = sun(2)*10;
+    
+    float sunRot = returnSunRot();
+
+    float strength = 0.0f; // [0,1]
+    
+    if (sunRot < 3.14159) {
+        // night
+        strength = 1.0f; 
+    } else if (sunRot < 3.14159 + 1.0) {
+        // sunrise
+        strength = 1.0f - (sunRot - pi);
+    } else if (sunRot > (2*pi - 1.0)) {
+        // sunset
+        strength = 1.0f - (2*pi - sunRot);
+    }
+    
+    // strength/color of sunlight;
+    light_diffuse[0] = 0.5f + strength/2;
+    light_diffuse[1] = 0.55f;// - strength/4;
+    light_diffuse[2] = 0.55f - strength/4;
+
 
 
     glLightfv(GL_LIGHT0, GL_POSITION, light_position);
@@ -175,13 +200,23 @@ void accPerspective(GLdouble fovy, GLdouble aspect,
 }
 
 void drawRain(){
+    glTexEnvf(GL_TEXTURE_2D,GL_TEXTURE_ENV_MODE,GL_MODULATE);
+    glDepthMask(GL_FALSE);
+    
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+    
+    
+    GLfloat rain_diffuse[] = {1.0f, 1.0f, 1.0f, 0.3f};
+    glMaterialfv(GL_FRONT, GL_AMBIENT, rain_diffuse);        
+    glLightfv(GL_LIGHT0, GL_AMBIENT, rain_diffuse);
+    glEnable(GL_LINE_SMOOTH);
+    
     for(int i = 0; i < numdrops; i++){
-        GLfloat rain_diffuse[] = {1.0f, 1.0f, 1.0f, 1.0f};
-        glMaterialfv(GL_FRONT, GL_AMBIENT, rain_diffuse);        
-        glLightfv(GL_LIGHT0, GL_AMBIENT, rain_diffuse);
+
     
         glBegin(GL_LINES); 
-            glVertex3f(rain[i](0) * 0.01, rain[i](1) * 0.01, rain[i](2) *0.01);
+             glVertex3f(rain[i](0) * 0.01, rain[i](1) * 0.01, rain[i](2) *0.01);
              glVertex3f(rain[i](0) * 0.01, rain[i](1)*0.01 + 0.1, rain[i](2)*0.01);
         glEnd(); 
         rain[i](1) -= 10; 
@@ -189,6 +224,10 @@ void drawRain(){
 
     }
    
+   
+    glDepthMask(GL_TRUE);
+    glEnable(GL_LIGHTING);
+    glDisable(GL_TEXTURE_2D);
 }
 
 
@@ -242,11 +281,12 @@ void display(void) {
 	}
 	drawTris();
     
-    
-    if (showrain) drawRain();    
+    if (showrain) drawRain();   
+     
     drawSun(); // behind clouds?
     drawOcean();
     drawClouds(); // clouds have transparency, so draw last!
+    
     
     //need to draw reflection
     
@@ -287,9 +327,7 @@ void processSpecialKeys(int key, int x, int y) {
 		}
 		break;
 	case GLUT_KEY_DOWN:
-         //cout << "down!" << endl;
 		if (glutGetModifiers() == GLUT_ACTIVE_SHIFT) {
-            //cout << "down shift!" << endl;
 			ytrans -= .15f*(focus/60.0);
 		} else {
 			rotUD += 1.0f*(focus/60.0);
@@ -429,6 +467,21 @@ void keyboard(unsigned char key, int x, int y) {
         break;
     case 'e':
         rotQE -= 1.0f*(focus/60.0);
+        break;
+    case '1':
+        updateSunRot(returnSunRot() - 0.55);
+        break;
+    case '2':
+        updateSunRot(returnSunRot() - 0.15);
+        break;
+    case '3':
+        updateSunRot(returnSunRot() + 0.15);
+        break;
+    case '4':
+        updateSunRot(returnSunRot() + 0.55);
+        break;
+    case '5':
+        cout << "sunRot: " << returnSunRot() << endl;
         break;
     case 27:
         exit(0);
