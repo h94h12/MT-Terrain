@@ -6,15 +6,15 @@
 // Some Classes and Global Standalone Functions
 //****************************************************
 
-#define GRID_X_MAX 5
-#define GRID_Y_MAX 5
-#define GRID_Z_MAX 5
+#define GRID_X_MAX 10
+#define GRID_Y_MAX 10
+#define GRID_Z_MAX 10
 
 #define STEP_X 0.1
 #define STEP_Y 0.1
 #define STEP_Z 0.1
 
-#define HEIGHTMAP_SIZE 100
+#define HEIGHTMAP_SIZE (int)(2 * GRID_X_MAX * (1/STEP_X))
 
 class Viewport;
 
@@ -32,21 +32,29 @@ Vector3f stepsize = Vector3f(STEP_X, STEP_Y, STEP_Z);
 
 void initializeDensityFunction(){
     h = HeightMap(HEIGHTMAP_SIZE, rand()); 
-    h.addPerlinNoise(16); 
+    h.addPerlinNoise(20); 
+    h.perturb(9, 3); 
     for(int i = 0; i < 10; i++) h.erode(16); 
     h.smoothen(); 
+}
+
+float closeCurve(float x, float y){
+    int a = 3; 
+    return pow(x, 4) + 2*x*x*y*y + pow(y, 4) - pow(x, 3) + 3*x*y*y - GRID_X_MAX; 
 }
 
 float density(Vector3f point) {
     int x = point[0]*(1/STEP_X) + GRID_X_MAX * (1/STEP_X);  
     int y = point[2]*(1/STEP_Z) + GRID_Z_MAX * (1/STEP_Z); 
-    float dist = point[0]*point[0] + point[2]*point[2];
+    float dist = closeCurve(point[0], point[2]); 
  
-    float height = h.heights[x * HEIGHTMAP_SIZE + y]/200; 
+    float height = h.heights[x * HEIGHTMAP_SIZE + y]/100; 
     if (height < 0) height *= -1; 
-    if (dist - (GRID_X_MAX - 0.1) > 0) height = -0.01; 
-    else if (dist - (GRID_X_MAX - 0.2) > 0) height *= 0.1; //height = -0.4;
-    else if (dist - (GRID_X_MAX - 0.4) > 0) height *= 0.2; //height = -0.1;
+    if(dist > 0) height *= 0.3; 
+    if(dist > 0.1) height *= 0.4; 
+    if (dist > (GRID_X_MAX - 1) ) height = 0; 
+    else if (dist  > (GRID_X_MAX - 2)) height *= 0.1; //height = -0.4;
+    else if (dist > (GRID_X_MAX - 3)) height *= 0.5; //height = -0.1;
     else if (dist - (GRID_X_MAX - 0.7)> 0) height *= 0.35; 
     else if (dist - (GRID_X_MAX - 1.0)> 0) height *= 0.5; 
     else if (dist - (GRID_X_MAX - 3.0)> 0) height *= 0.7; 
@@ -241,10 +249,10 @@ void display(void) {
     drawClouds(); // clouds have transparency, so draw last!
     
     //need to draw reflection
-    /*glMatrixMode(GL_MODELVIEW);
-    glRotatef(180, 1, 0, 0); 
-    glTranslatef(0, -2, 0); 
-    drawTris();*/ 
+    
+   // glMatrixMode(GL_MODELVIEW);
+   // glScalef(1, -1, 1); 
+   // drawTris(); 
 
 	glPopMatrix();
 	glutSwapBuffers();

@@ -39,6 +39,7 @@ void Triangle::draw() {
         double mmax = max(max(v1(1), v2(1)), v3(1));
         double dist = mmax - mmin;
         
+        if (height < 0.005) return; 
         if (height < 0.05) {
             glBindTexture(GL_TEXTURE_2D, sandTexture);
         } else if (height < 0.11) {
