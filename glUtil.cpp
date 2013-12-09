@@ -31,11 +31,13 @@ void Triangle::draw() {
         double mmax = max(max(v1(1), v2(1)), v3(1));
         double dist = mmax - mmin;
         
-        if (dist < 0.05) {
+        if (height < 0.09) {
             glBindTexture(GL_TEXTURE_2D, grassTexture3);
         } else {
             glBindTexture(GL_TEXTURE_2D, rockTexture3);
         }
+        
+        
         
         glBegin(GL_TRIANGLES);
         Vector3f normal = (v1-v2).cross(v1-v3);
@@ -214,7 +216,7 @@ GLuint AddTextureToOpenGL(unsigned w, unsigned h, void * ptr) {
     return texture;
 }
 
-GLuint LoadTextureFromPNG(const char * filename) {
+GLuint LoadTextureFromPNG(const char * filename, unsigned alpha) {
     std::vector<unsigned char> png;
     std::vector<unsigned char> image; 
     lodepng::State state; //optionally customize this one
@@ -224,7 +226,15 @@ GLuint LoadTextureFromPNG(const char * filename) {
     
     unsigned error = lodepng::decode(image,  w,  h, state, png); // decode file into image
     if(error) std::cout << "decoder error " << error << ": "<< lodepng_error_text(error) << std::endl;
-
+    
+    //alpha
+    if (alpha < 255) {
+        for(unsigned y = 0; y < h; y++) {
+            for(unsigned x = 0; x < w; x++) {
+                image[4 * w * y + 4 * x + 3] = alpha;
+            }
+        }
+    }
 
     //void * ptr = &image[0];
     return AddTextureToOpenGL(w, h, &image[0]);

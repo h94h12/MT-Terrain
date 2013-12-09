@@ -32,10 +32,7 @@ Dot sky_fdl = Dot( a,-a,-a);
 
 
 
-Dot sun_ul = Dot(-skyboxMax/2, -skyboxMax/2, 0);
-Dot sun_ur = Dot(-skyboxMax/2,  skyboxMax/2, 0);
-Dot sun_dr = Dot(skyboxMax/2,   skyboxMax/2, 0);
-Dot sun_dl = Dot(skyboxMax/2,  -skyboxMax/2, 0);
+
 
 
 
@@ -46,7 +43,7 @@ GLuint CreatePerlinCloud(unsigned indx, unsigned size, bool blue) {
     image.reserve(width * height * 4);
      
     HeightMap hm = HeightMap(width, indx*123456789); 
-    cout << "pre-rendering cloud layer : " << indx << endl;
+    //cout << "pre-rendering cloud layer : " << indx << endl;
 
     hm.addPerlinNoise(2 + (indx%2));
     hm.smoothen();
@@ -69,12 +66,12 @@ GLuint CreatePerlinCloud(unsigned indx, unsigned size, bool blue) {
              mmin = std::min(pn, mmin);
         }
     }
-    cout << "mmax: " << mmax << ", mmin:" << mmin << endl;
+   // cout << "mmax: " << mmax << ", mmin:" << mmin << endl;
     float easeDist = height/5;
     for(unsigned y = 0; y < height; y++) {
         for(unsigned x = 0; x < width; x++) {
             float pn = ((hm).heights[x*height + y]-mmin)/(mmax - mmin);
-            //if (pn < 0.0 || pn > 1.0) cout << "@#%#$$%#" << endl;
+
             pn = sqrt(pn*255);
 
            
@@ -82,7 +79,7 @@ GLuint CreatePerlinCloud(unsigned indx, unsigned size, bool blue) {
             
 
             if (blue) {
-                //pn2 *= 2.0;
+                pn2 *= 0.2;
                 image[4 * width * y + 4 * x + 0] = std::max(0.0, 55.0-pn*8);
                 image[4 * width * y + 4 * x + 1] = std::max(0.0, 55.0-pn*8);
                 image[4 * width * y + 4 * x + 2] = 255.0-(pn*0.7);
@@ -254,28 +251,26 @@ void drawClouds() {
 
 
 GLuint oceanTexture;
-GLuint sandTexture;
-GLuint wavesTexture0;
-GLuint wavesTexture1;
-GLuint wavesTexture2;
-void initOcean(){
-    oceanTexture = LoadTextureFromPNG("textures/sm64_ocean.png");
-    sandTexture = LoadTextureFromPNG("textures/sand.png");
-    wavesTexture0 = CreatePerlinCloud(0, 512, true);
-    wavesTexture1 = CreatePerlinCloud(1, 512, true);
-    wavesTexture2 = CreatePerlinCloud(2, 512, true);
+//GLuint sandTexture;
+GLuint wavesTexture;
+double waveCount;
 
+void initOcean(){
+    oceanTexture = LoadTextureFromPNG("textures/water.png");
+    //sandTexture = LoadTextureFromPNG("textures/water.png");
+    //wavesTexture0 = CreatePerlinCloud(0, 512, true);
+    wavesTexture = LoadTextureFromPNG("textures/water.png", 70);
+    waveCount = 0;
 }
 
 
 
 void drawOcean(){
 
-    
-    Dot oceanlevel = Dot(0, a*1.04, 0);
-    Dot oceanlevelTrans0 = Dot(0, a*1.01, 0);
-    Dot oceanlevelTrans1 = Dot(0, a*1.02, 0);
-    Dot oceanlevelTrans2 = Dot(0, a*1.03, 0);
+    waveCount += 0.001;
+    Dot oceanlevel = Dot(0, a, 0);
+    Dot ol = Dot(0, 0.01, 0);
+
     
     glTexEnvf(GL_TEXTURE_2D,GL_TEXTURE_ENV_MODE,GL_MODULATE);
     glDepthMask(GL_FALSE);
@@ -286,33 +281,34 @@ void drawOcean(){
     glEnable(GL_TEXTURE_2D);
     
     
-    glBindTexture(GL_TEXTURE_2D, sandTexture);
+    glBindTexture(GL_TEXTURE_2D, oceanTexture);
     glBegin(GL_QUADS); 
         drawSkyBoxDot(sky_bul - oceanlevel, 1.0, 0.0);
         drawSkyBoxDot(sky_ful - oceanlevel, 0.0, 0.0);
         drawSkyBoxDot(sky_fur - oceanlevel, 0.0, 1.0);
         drawSkyBoxDot(sky_bur - oceanlevel, 1.0, 1.0); glEnd();
       
-    glBindTexture(GL_TEXTURE_2D, wavesTexture0);
+    glBindTexture(GL_TEXTURE_2D, wavesTexture);
     glBegin(GL_QUADS); 
-        drawSkyBoxDot(sky_bul - oceanlevelTrans0, 1.0, 0.0);
-        drawSkyBoxDot(sky_ful - oceanlevelTrans0, 0.0, 0.0);
-        drawSkyBoxDot(sky_fur - oceanlevelTrans0, 0.0, 1.0);
-        drawSkyBoxDot(sky_bur - oceanlevelTrans0, 1.0, 1.0); glEnd();
+        drawSkyBoxDot(sky_bul - oceanlevel + ol, 1.0 + waveCount, 0.0 + waveCount);
+        drawSkyBoxDot(sky_ful - oceanlevel + ol, 0.0 + waveCount, 0.0 + waveCount);
+        drawSkyBoxDot(sky_fur - oceanlevel + ol, 0.0 + waveCount, 1.0 + waveCount);
+        drawSkyBoxDot(sky_bur - oceanlevel + ol, 1.0 + waveCount, 1.0 + waveCount); glEnd();
         
-    glBindTexture(GL_TEXTURE_2D, wavesTexture1);
+    glBindTexture(GL_TEXTURE_2D, wavesTexture);
     glBegin(GL_QUADS); 
-        drawSkyBoxDot(sky_bul - oceanlevelTrans1, 1.0, 0.0);
-        drawSkyBoxDot(sky_ful - oceanlevelTrans1, 0.0, 0.0);
-        drawSkyBoxDot(sky_fur - oceanlevelTrans1, 0.0, 1.0);
-        drawSkyBoxDot(sky_bur - oceanlevelTrans1, 1.0, 1.0); glEnd();
+        drawSkyBoxDot(sky_bul - oceanlevel + ol + ol, 1.0 - waveCount*0.5, 0.0);
+        drawSkyBoxDot(sky_ful - oceanlevel + ol + ol, 0.0 - waveCount*0.5, 0.0);
+        drawSkyBoxDot(sky_fur - oceanlevel + ol + ol, 0.0 - waveCount*0.5, 1.0);
+        drawSkyBoxDot(sky_bur - oceanlevel + ol + ol, 1.0 - waveCount*0.5, 1.0); glEnd();
         
-    glBindTexture(GL_TEXTURE_2D, wavesTexture2);
+    glBindTexture(GL_TEXTURE_2D, wavesTexture);
     glBegin(GL_QUADS); 
-        drawSkyBoxDot(sky_bul - oceanlevelTrans2, 1.0, 0.0);
-        drawSkyBoxDot(sky_ful - oceanlevelTrans2, 0.0, 0.0);
-        drawSkyBoxDot(sky_fur - oceanlevelTrans2, 0.0, 1.0);
-        drawSkyBoxDot(sky_bur - oceanlevelTrans2, 1.0, 1.0); glEnd();
+        drawSkyBoxDot(sky_bul - oceanlevel + ol + ol + ol, 1.0 + waveCount*0.5, 0.0);
+        drawSkyBoxDot(sky_ful - oceanlevel + ol + ol + ol, 0.0 + waveCount*0.5, 0.0);
+        drawSkyBoxDot(sky_fur - oceanlevel + ol + ol + ol, 0.0 + waveCount*0.5, 1.0);
+        drawSkyBoxDot(sky_bur - oceanlevel + ol + ol + ol, 1.0 + waveCount*0.5, 1.0); glEnd();
+
       
         
     glDepthMask(GL_TRUE);
@@ -336,8 +332,15 @@ void initSun() {
     sunPosDot = Dot(sunX, sunY, sunZ);
 }
 
+
+Dot sun_ul = Dot(-skyboxMax/2, -skyboxMax/2, 0);
+Dot sun_ur = Dot(-skyboxMax/2,  skyboxMax/2, 0);
+Dot sun_dr = Dot(skyboxMax/2,   skyboxMax/2, 0);
+Dot sun_dl = Dot(skyboxMax/2,  -skyboxMax/2, 0);
+
+
 void drawSun() {
-    sunRot += 0.005; 
+    sunRot += 0.05; 
     float sunRotInDegrees = sunRot*180/3.141592;
     
     
@@ -350,15 +353,12 @@ void drawSun() {
     glEnable(GL_TEXTURE_2D);
     
 
-    //glTranslatef(sunDistance, 0, 0);
+
     glRotatef(sunRotInDegrees, 1, 0, 0);
 
     glBindTexture(GL_TEXTURE_2D, sunTexture);
     glBegin(GL_QUADS);
-        //drawSkyBoxDot(sky_bul * 0.1 + sunPosDot, 1.0, 0.0);
-        //drawSkyBoxDot(sky_ful * 0.1 + sunPosDot, 0.0, 0.0);
-        //drawSkyBoxDot(sky_fur * 0.1 + sunPosDot, 0.0, 1.0);
-        //drawSkyBoxDot(sky_bur * 0.1 + sunPosDot, 1.0, 1.0);
+
         
         drawSkyBoxDot(sun_ul + Dot(0, 0, sunDistance), 1.0, 0.0);
         drawSkyBoxDot(sun_ur + Dot(0, 0, sunDistance), 0.0, 0.0);
@@ -367,19 +367,8 @@ void drawSun() {
      glEnd(); 
 
     glRotatef(-sunRotInDegrees, 1, 0, 0);
-    //glTranslatef(-sunDistance, 0, 0);
-    
-    
-    // to be used by light point!
-    
-    /*sunPosDot = Dot(sunX, sunY, sunZ);
-    glBegin(GL_QUADS);
-    drawSkyBoxDot(sun_ul + sunPosDot, 1.0, 0.0);
-    drawSkyBoxDot(sun_ur + sunPosDot, 0.0, 0.0);
-    drawSkyBoxDot(sun_dr + sunPosDot, 0.0, 1.0);
-    drawSkyBoxDot(sun_dl + sunPosDot, 1.0, 1.0);
-    glEnd(); 
-    */
+
+
     
     glDepthMask(GL_TRUE);
     glEnable(GL_LIGHTING);

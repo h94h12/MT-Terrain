@@ -59,7 +59,7 @@ extern bool wireframe;
 extern vector_tri tris;
 
 GLuint AddTextureToOpenGL(unsigned w, unsigned h, void * ptr);
-GLuint LoadTextureFromPNG(const char * filename);
+GLuint LoadTextureFromPNG(const char * filename, unsigned = 255);
 
 
 class Tetrahedron {

@@ -44,11 +44,12 @@ float density(Vector3f point) {
  
     float height = h.heights[x * HEIGHTMAP_SIZE + y]/200; 
     if (height < 0) height *= -1; 
-    if (dist - (GRID_X_MAX - 0.1) > 0) height = -1; 
-    else if (dist - (GRID_X_MAX - 0.2) > 0) height = -0.4;
-    else if (dist - (GRID_X_MAX - 0.4) > 0) height = -0.1;
-    else if (dist - (GRID_X_MAX - 0.7)> 0) height *= 0.1; 
+    if (dist - (GRID_X_MAX - 0.1) > 0) height = -0.01; 
+    else if (dist - (GRID_X_MAX - 0.2) > 0) height *= 0.1; //height = -0.4;
+    else if (dist - (GRID_X_MAX - 0.4) > 0) height *= 0.2; //height = -0.1;
+    else if (dist - (GRID_X_MAX - 0.7)> 0) height *= 0.35; 
     else if (dist - (GRID_X_MAX - 1.0)> 0) height *= 0.5; 
+    else if (dist - (GRID_X_MAX - 3.0)> 0) height *= 0.7; 
  
     return point(1) - height;
     
