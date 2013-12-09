@@ -96,8 +96,7 @@ void drawTris() {
     light_position[0] = sun(0)*10;
     light_position[1] = sun(1)*10;
     light_position[2] = sun(2)*10;
-    //cout << sun(0) << endl;
-    //light_position[2] = -10.0f;
+
 
     glLightfv(GL_LIGHT0, GL_POSITION, light_position);
     glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
@@ -105,7 +104,7 @@ void drawTris() {
     glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
     
     glEnable(GL_TEXTURE_2D);
-    //glBindTexture(GL_TEXTURE_2D, grassTexture);
+    
     
 	for (int i = 0; i < (int)tris.size(); i++) {
 		tris[i].draw();
@@ -211,11 +210,7 @@ void reshape(int w, int h) {
 void display(void) {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	//if (flat) {
-	//	glShadeModel(GL_FLAT);
-	//} else {
-	//	glShadeModel(GL_SMOOTH);
-	//}
+	
 
 	glPushMatrix();
 	
@@ -225,7 +220,15 @@ void display(void) {
 	glRotatef(rotQE, 0, 0, 1);
 
     drawSkyBox();
+    
+    if (flat) {
+		glShadeModel(GL_FLAT);
+	} else {
+		glShadeModel(GL_SMOOTH);
+	}
 	drawTris();
+    
+    
     if (showrain) drawRain();    
     drawSun(); // behind clouds?
     drawOcean();
@@ -327,6 +330,12 @@ void keyboard(unsigned char key, int x, int y) {
         break;
     case 'c':
         ztrans -= .15f*(focus/60.0);
+        break;
+    case 'i':
+        ytrans -= .15f*(focus/60.0);
+        break;
+    case 'k':
+        ytrans += .15f*(focus/60.0);
         break;
     case 'w':
         wireframe = !wireframe;

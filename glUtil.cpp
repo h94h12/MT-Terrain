@@ -8,11 +8,19 @@ Triangle::Triangle(Vector3f v1, Vector3f v2, Vector3f v3) {
 }
 
 
-GLuint rockTexture3; // locally used only
-GLuint grassTexture3;
+GLuint rockTexture; // locally used only
+GLuint grassTexture;
+GLuint sandTexture;
+GLuint sandrock1Texture; // fades from sand to rock
+GLuint sandrock2Texture;
+GLuint sandrock3Texture;
 void initTerrainTextures() {
-    grassTexture3 = LoadTextureFromPNG("textures/grass.png");
-    rockTexture3 = LoadTextureFromPNG("textures/rock.png");
+    grassTexture = LoadTextureFromPNG("textures/grass.png");
+    rockTexture = LoadTextureFromPNG("textures/rock.png");
+    sandTexture = LoadTextureFromPNG("textures/sand.png");
+    sandrock1Texture = LoadTextureFromPNG("textures/sandrock1.png");
+    sandrock2Texture = LoadTextureFromPNG("textures/sandrock2.png");
+    sandrock3Texture = LoadTextureFromPNG("textures/sandrock3.png");
     
     
 }
@@ -31,10 +39,16 @@ void Triangle::draw() {
         double mmax = max(max(v1(1), v2(1)), v3(1));
         double dist = mmax - mmin;
         
-        if (height < 0.09) {
-            glBindTexture(GL_TEXTURE_2D, grassTexture3);
+        if (height < 0.05) {
+            glBindTexture(GL_TEXTURE_2D, sandTexture);
+        } else if (height < 0.11) {
+            glBindTexture(GL_TEXTURE_2D, sandrock1Texture);
+        } else if (height < 0.17) {
+            glBindTexture(GL_TEXTURE_2D, sandrock2Texture);
+        } else if (height < 0.25) {
+            glBindTexture(GL_TEXTURE_2D, sandrock3Texture);
         } else {
-            glBindTexture(GL_TEXTURE_2D, rockTexture3);
+            glBindTexture(GL_TEXTURE_2D, rockTexture);
         }
         
         
