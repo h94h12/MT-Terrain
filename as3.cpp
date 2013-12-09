@@ -69,8 +69,8 @@ Viewport viewport;
 vector_tri tris;
 
 Grid *grid;
-float ustep, vstep, error, max_z = 0, focus = 60;
-float rotUD = 0, rotLR = 0, rotQE = 0, ytrans = 0, xtrans = 0, ztrans = 0;
+float ustep, vstep, error, max_z = 0, focus = 45, minfocus = 3, maxfocus = 45; 
+float rotUD = 6, rotLR = 0, rotQE = 0, ytrans = 0, xtrans = 0, ztrans = 0;
 bool flat, wireframe, adaptive, dof, showrain, fog;
 GLfloat mat_specular[] = {0.8f, 0.8f, 0.8f, 0.0f};
 GLfloat mat_shininess[] = {128.0f};
@@ -80,6 +80,9 @@ GLfloat light_position[] = {5.0f, 1.0f, 5.0f, 1.0f};
 GLfloat light_diffuse[] = {.5f, 0.5f, 0.4f, 1.0f};
 GLfloat light_specular[] = {0.0f, 0.0f, 0.0f, 0.0f};
 GLfloat light_ambient[] = {0.1f, 0.1f, 0.1f, 1.0f};
+
+bool mouseButtony_down_left = false, mouseButtonx_down = false, mouseButtony_down_right = false; 
+int mouse_yClick_left = 0, mouse_xClick = 0,mouse_yClick_right = 0;  
 
 GLint fogMode; 
 Vector3f* rain; 
@@ -210,7 +213,10 @@ void reshape(int w, int h) {
 void display(void) {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	
+	 glMatrixMode(GL_PROJECTION);
+        glLoadIdentity();
+        gluPerspective(focus, (GLfloat) viewport.w/ (GLfloat) viewport.h, 1.0, 40.0);
+        glMatrixMode(GL_MODELVIEW);
 
 	glPushMatrix();
 	
@@ -284,8 +290,58 @@ void processSpecialKeys(int key, int x, int y) {
 	}
 }
 
+void mouseButton(int button, int state, int x, int y){
+    if(button == GLUT_LEFT_BUTTON){
+        mouseButtony_down_left = (state == GLUT_DOWN)? true:false; 
+        mouse_yClick_left = y; 
+    }
+    if(button == GLUT_RIGHT_BUTTON){
+        mouseButtonx_down = (state == GLUT_DOWN)? true:false; 
+        mouseButtony_down_right = (state == GLUT_DOWN)? true:false;
+        mouse_yClick_right = y; 
+        mouse_xClick = x; 
+    }
+}
+void mouseMotion(int x, int y){
+    if(mouseButtony_down_left){
+        if(y < mouse_yClick_left){
+            focus *= pow(0.95,  0.001*abs((int)(y - mouse_yClick_left))); 
+            if(focus < minfocus) focus = minfocus; 
+        }
+        else{
+            focus *= pow(1.0f/0.95f,  0.001*abs((int)(y - mouse_yClick_left))); 
+           if (focus > maxfocus) focus = maxfocus; 
+            
+        }
+    }
+    if(mouseButtonx_down){
+        if(x < mouse_xClick){//right
+            rotLR -= 0.001 * abs((int)(x - mouse_xClick))*( 1.0f*(focus/60.0));
+        }
+        else{//left
+            rotLR += 0.001 * abs((int)(x - mouse_xClick)) *(1.0f*(focus/60.0));
+        }
+    }
+    if(mouseButtony_down_right){
+        if(y < mouse_yClick_right){
+            rotUD -=  0.001 * abs((int)(y - mouse_yClick_right))*1.0f*(focus/60.0); 
+            if(rotUD < 6) rotUD = 6; 
+        }
+        else{
+            rotUD +=  0.001 * abs((int)(y - mouse_yClick_right))*1.0f*(focus/60.0);
+            if(rotUD > 26) rotUD = 26; 
+        }
+        
+    }
+    glutPostRedisplay(); 
+}
+void debug(){
+    cout<<"The rotUD is"<<rotUD<<endl; 
+}
+
 void keyboard(unsigned char key, int x, int y) {
-    switch (key) {   
+    switch (key) {  
+    case 'D': debug(); break; 
     case 'F':
         fog = !fog;
         if (fog)
@@ -453,6 +509,8 @@ int main(int argc, char* argv[]) {
 	glutReshapeFunc(reshape);
 	glutKeyboardFunc(keyboard);
 	glutSpecialFunc(processSpecialKeys);
+        glutMouseFunc (mouseButton);
+    glutMotionFunc (mouseMotion);
 	glutIdleFunc(idle);
 	glutMainLoop();
 	return 0;
