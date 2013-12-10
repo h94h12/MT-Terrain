@@ -48,7 +48,7 @@ using namespace std;
 
 class Grid;
 class Triangle;
-
+class Viewport;
 
 void initTerrainTextures();
 
@@ -57,10 +57,16 @@ typedef vector<Triangle/*, Eigen::aligned_allocator<Eigen::Vector3f> */> vector_
 
 extern bool wireframe;
 extern vector_tri tris;
+extern Viewport viewport;
 
 GLuint AddTextureToOpenGL(unsigned w, unsigned h, void * ptr);
 GLuint LoadTextureFromPNG(const char * filename, unsigned = 255);
 
+
+class Viewport {
+  public:
+    int w, h; // width and height
+};
 
 class Tetrahedron {
 public:

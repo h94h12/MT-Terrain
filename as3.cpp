@@ -1,6 +1,7 @@
 #include "glUtil.h"
 #include "terrain.h"
 #include "Sky.h"
+#include "Camera.h"
 
 //****************************************************
 // Some Classes and Global Standalone Functions
@@ -16,13 +17,6 @@
 #define pi 3.14159
 
 #define HEIGHTMAP_SIZE (int)(2 * GRID_X_MAX * (1/STEP_X))
-
-class Viewport;
-
-class Viewport {
-  public:
-    int w, h; // width and height
-};
 
 HeightMap h;
 
@@ -94,7 +88,7 @@ vector_tri tris;
 Grid *grid;
 float ustep, vstep, error, max_z = 0, focus = 71, minfocus = 3, maxfocus = 75; 
 float rotUD = 15, rotLR = 0, rotQE = 0, ytrans = 0, xtrans = 0, ztrans = 0;
-bool flat, wireframe, adaptive, dof, showrain, fog;
+bool flat, wireframe, adaptive, dof, showrain, fog, takePic;
 GLfloat mat_specular[] = {0.8f, 0.8f, 0.8f, 0.0f};
 GLfloat mat_shininess[] = {128.0f};
 GLfloat mat_ambient[] = {0.0f, 0.3f, 0.0f, 1.0f};
@@ -265,6 +259,8 @@ void initRain(){
 void reshape(int w, int h) {
 	viewport.w = w;
 	viewport.h = h;
+	
+	initCamera();
 
 	glViewport(0, 0, w, h);
 	glMatrixMode(GL_PROJECTION);
@@ -317,10 +313,6 @@ void display(void) {
 	glRotatef(rotLR, 0, 1, 0);
 	glRotatef(rotQE, 0, 0, 1);
     
-    
-
-    
-    
     if (flat) {
 		glShadeModel(GL_FLAT);
 	} else {
@@ -345,7 +337,18 @@ void display(void) {
 
 	glPopMatrix();
 	glutSwapBuffers();
-}
+
+    if(takePic) {
+        takePic = false;
+        takePicture();
+        writeImage("Sex_Piston.png");
+        renderBlackandWhite();
+        writeImage("Sex_Pistol_BW.png");
+        takePicture();
+        bayerFilter();
+        writeImage("Sex_Pistol_Bayer.png");
+    }
+} 
 
 void idle (void) {
 	glutPostRedisplay();
@@ -437,7 +440,10 @@ void debug(){
 
 void keyboard(unsigned char key, int x, int y) {
     switch (key) {  
-    case 'D': debug(); break; 
+    case 'D': debug(); break;
+    case 'P':
+        takePic = true;
+        break;
     case 'F':
         fog = !fog;
         if (fog)
@@ -562,12 +568,12 @@ void test(){
 
 int main(int argc, char* argv[]) {
     
-    cout << "start" << endl;
+  cout << "start" << endl;
 	viewport.h = 800;
 	viewport.w = 800;
 
 	clock_t t = clock();
-
+	initCamera();
     initializeDensityFunction();
 
     rain = new Vector3f[numdrops]; 
