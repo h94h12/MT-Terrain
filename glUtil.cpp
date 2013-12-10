@@ -59,11 +59,8 @@ void drawTree(Vector3f v1, Vector3f v2){
 
 
 void initTerrainTextures() {
-    //treeTexture = LoadTextureFromPNG("textures/tree.png"); 
-    //treeTexture2 = LoadTextureFromPNG("textures/tree2.png"); 
-    treeTexture = LoadTextureFromPNG("textures/grass.png"); 
-    treeTexture2 = LoadTextureFromPNG("textures/grass.png"); 
-    
+    treeTexture = LoadTextureFromPNG("textures/tree.png"); 
+    treeTexture2 = LoadTextureFromPNG("textures/tree2.png"); 
     grassTexture = LoadTextureFromPNG("textures/grass.png");
     rockTexture = LoadTextureFromPNG("textures/rock.png");
     sandTexture = LoadTextureFromPNG("textures/sand.png");

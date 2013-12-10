@@ -19,7 +19,7 @@ void initSun() {
     sunSpin2 = 0;
     sunDistance = skyboxMax2*0.85;
     sunTexture = LoadTextureFromPNG("textures/sun.png");
-    sunRaysTexture = LoadTextureFromPNG("textures/sunrays.png");
+    sunRaysTexture = LoadTextureFromPNG("textures/sun_retry5.png");
     
     sunX = 0;//cos(sunRot);
     sunY = sin(-sunRot)*sunDistance;
