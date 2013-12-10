@@ -341,7 +341,7 @@ void display(void) {
 
 	 glMatrixMode(GL_PROJECTION);
         glLoadIdentity();
-        gluPerspective(focus, (GLfloat) viewport.w/ (GLfloat) viewport.h, 0.5, 40.0);
+        gluPerspective(focus, (GLfloat) viewport.w/ (GLfloat) viewport.h, 0.5, 60.0);
         glMatrixMode(GL_MODELVIEW);
 
 	glPushMatrix();
