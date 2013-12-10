@@ -218,7 +218,10 @@ void drawClouds() {
 
 
 
+void drawCloudsReflection() {
 
+
+}
 
 
 
@@ -231,10 +234,10 @@ GLuint wavesTexture;
 double waveCount;
 
 void initOcean(){
-    oceanTexture = LoadTextureFromPNG("textures/water.png");
+    oceanTexture = LoadTextureFromPNG("textures/water.png", 90);
     //sandTexture = LoadTextureFromPNG("textures/water.png");
     //wavesTexture0 = CreatePerlinCloud(0, 512, true);
-    wavesTexture = LoadTextureFromPNG("textures/water.png", 140);
+    wavesTexture = LoadTextureFromPNG("textures/water.png", 90);
     waveCount = 0;
 }
 
@@ -243,8 +246,8 @@ void initOcean(){
 void drawOcean(){
 
     waveCount += 0.001;
-    Dot oceanlevel = Dot(0, a, 0);
-    Dot ol = Dot(0, 0.01, 0);
+    Dot oceanlevel = Dot(0, a-0.003, 0);
+    Dot ol = Dot(0, 0.002, 0);
 
     
     glTexEnvf(GL_TEXTURE_2D,GL_TEXTURE_ENV_MODE,GL_MODULATE);

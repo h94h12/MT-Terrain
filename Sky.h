@@ -14,6 +14,7 @@ void initSun();
 void drawSkyBoxDot(Dot d, double u, double v);
 void drawSkyBox();
 void drawClouds();
+void drawCloudsReflection();
 void drawOcean();
 
 void drawSun();

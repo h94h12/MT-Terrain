@@ -120,9 +120,9 @@ GLfloat mat_ambient[] = {0.0f, 0.3f, 0.0f, 1.0f};
 GLfloat mat_diffusion[] = {0.0f, 0.3f, 0.0f, 1.0f};
 
 GLfloat light_position[] = {5.0f, 1.0f, 5.0f, 1.0f};
-GLfloat light_diffuse[] = {.5f, 0.5f, 0.4f, 1.0f};
+GLfloat light_diffuse[] = {0.5f, 0.5f, 0.4f, 1.0f};
 GLfloat light_specular[] = {0.1f, 0.1f, 0.1f, 0.0f};
-GLfloat light_ambient[] = {0.07f, 0.02f, 0.05f, 1.0f};
+GLfloat light_ambient[] = {0.02f, 0.02f, 0.02f, 1.0f}; // 7 2 5
 
 bool mouseButtony_down_left = false, mouseButtonx_down = false, mouseButtony_down_right = false; 
 int mouse_yClick_left = 0, mouse_xClick = 0,mouse_yClick_right = 0;  
@@ -152,11 +152,12 @@ void drawTris() {
     float sunRot = returnSunRot();
 
     float strength = 0.0f; // [0,1]
+    float ambstrength = 0.0f; // [0,1]
     
-    if (sunRot < 3.14159) {
+    if (sunRot < pi) {
         // night
         strength = 1.0f; 
-    } else if (sunRot < 3.14159 + 1.0) {
+    } else if (sunRot < pi + 1.0) {
         // sunrise
         strength = 1.0f - (sunRot - pi);
     } else if (sunRot > (2*pi - 1.0)) {
@@ -169,6 +170,17 @@ void drawTris() {
     light_diffuse[1] = 0.55f - strength/8;
     light_diffuse[2] = 0.55f - strength/4;
 
+    if (sunRot < pi) {
+	ambstrength = 0.0f;
+	if (sunRot < 0.5) ambstrength = (0.5f - sunRot)*2;
+	if (sunRot > pi - 0.5) ambstrength = (sunRot - (pi - 0.5f))*2;
+    } else {
+	ambstrength = 1.0f;
+    }
+
+    light_ambient[0] = 0.01f + ambstrength*0.09;
+    light_ambient[1] = 0.01f + ambstrength*0.03;
+    light_ambient[2] = 0.02f + ambstrength*0.01; 
 
 
     glLightfv(GL_LIGHT0, GL_POSITION, light_position);
@@ -339,26 +351,36 @@ void display(void) {
 	glRotatef(rotQE, 0, 0, 1);
     
     if (flat) {
-		glShadeModel(GL_FLAT);
-	} else {
-		glShadeModel(GL_SMOOTH);
-	}
-	drawTris();
+	glShadeModel(GL_FLAT);
+    } else {
+	glShadeModel(GL_SMOOTH);
+    }
+
+    drawTris();
     drawSkyBox();
     
-    if (showrain) drawRain();   
+     
      
     drawSun(); // behind clouds?
     
     //draw reflection
        
-    drawClouds();    
+    drawClouds(); 
+
+if (showrain) drawRain();  
+
+
     glMatrixMode(GL_MODELVIEW);
     glScalef(1, -1, 1); 
-    drawTris(); 
-    drawOcean();
+    drawTris();
+
+
     //drawOceanShader(); 
     drawClouds(); // clouds have transparency, so draw last!
+
+    glScalef(1, -1, 1); 
+    drawOcean(); 
+    glScalef(1, -1, 1);  
 
 	glPopMatrix();
 	glutSwapBuffers();

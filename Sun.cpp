@@ -14,7 +14,7 @@ Dot sun_dl = Dot(skyboxMax2*0.5,  -skyboxMax2*0.5, 0);
 
 
 void initSun() {
-    sunRot = 3.14159;
+    sunRot = 3.14159 - 0.8;
     sunSpin1 = 0;
     sunSpin2 = 0;
     sunDistance = skyboxMax2*0.85;
