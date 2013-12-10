@@ -25,29 +25,37 @@ HeightMap h;
 Vector3f gridMax = Vector3f(GRID_X_MAX, GRID_Y_MAX, GRID_Z_MAX); 
 Vector3f stepsize = Vector3f(STEP_X, STEP_Y, STEP_Z); 
 
-void initializeDensityFunction(){
+void initializeDensityFunction(int noise){
     h = HeightMap(HEIGHTMAP_SIZE, rand()); 
-    h.addPerlinNoise(20); 
+    h.addPerlinNoise(noise); 
     h.perturb(10, 3); 
     for(int i = 0; i < 10; i++) h.erode(16); 
     h.smoothen(); 
 }
-
-float closeCurve(float x, float y){
-    int a = 6; 
+//xs and ys are shift amounts
+float closeCurve(float x, float y, int id, float xs, float ys){
+    int a = 2; 
     float b = x*x + y*y; 
-    //return pow(x, 4) + 2*x*x*y*y + pow(y, 4) - pow(x, 3) + 3*x*y*y - GRID_X_MAX*1.5;  //cruciform
-    return pow(y, 6) - (pow(a*x, 2) - pow(x, 6));  //butterfly curve
-    //return pow(x, 6) + 3*(x, 4)*(y*y -3) + 3*x*x*y*y*(y*y + 2) + pow(y, 6) - pow(y, 4);  //cycloid of ceva, get pacman shape
-    //return pow(x*x + y*y, 3) - 4*a*a*x*x*y*y; //four leaf clover 
+    if(id == 0)
+        return pow(x, 4) + 2*x*x*y*y + pow(y, 4) - pow(x, 3) + 3*x*y*y - GRID_X_MAX*1.5;  //cruciform
+    else if(id == 1)
+        return pow(y - ys, 6) - (pow(a*(x - xs), 2) - pow(x - xs, 6));  //butterfly curve
+    else if (id == 2)
+        return pow(x - xs, 6) + 3*(x - xs, 4)*((y - ys)*(y - ys) -3) + 3*(x - xs)*(x - xs)*(y- ys)*(y - ys)*((y - ys)*(y - ys) + 2) + pow((y - ys), 6) - pow((y - ys), 4);  //cycloid of ceva, get pacman shape
+    return pow((x - xs)*(x - xs) + (y - ys)*(y - ys), 3) - 4*a*a*(x - xs)*(x - xs)*(y - ys)*(y - ys); //four leaf clover 
   //return -52521875*pow(a, 12) - 1286250*pow(a, 10)*b - 32025*pow(a, 8)*b*b + 93312*pow(a, 7)*(pow(x, 5) - 10*x*x*x*y*y + 5*x*pow(y, 4)) - 812*pow(a, 6)*pow(b, 3) - 21*pow(a, 4)*pow(b, 4) - 42*a*a*pow(b, 5) + pow(b, 6); 
   
 }
 
-float density(Vector3f point) {
+float density1(Vector3f point) {
     int x = point[0]*(1/STEP_X) + GRID_X_MAX * (1/STEP_X);  
     int y = point[2]*(1/STEP_Z) + GRID_Z_MAX * (1/STEP_Z); 
-    float dist = closeCurve(point[0], point[2]); 
+    float dist = closeCurve(point[0], point[2], 0, 0, 0); 
+    float dist2 = closeCurve(point[0], point[2], 1, 3, 3); 
+    float dist3 = closeCurve(point[0], point[2], 2, -4, 4); 
+    float dist4 = closeCurve(point[0], point[2], 3, -2, -2);  
+    
+    
     int r = rand() % 100; 
  
     float height = h.heights[x * HEIGHTMAP_SIZE + y]/150; 
@@ -60,12 +68,29 @@ float density(Vector3f point) {
     if(dist > 3.5) height *= 0.3; 
     if (dist > 2) height *= 0.2; */
     
-    if(dist > 2*GRID_X_MAX) height = 0; 
-    else if (dist > (GRID_X_MAX - 1) ){
-      if(r % 4 == 0) height *= 0.5;
-      else height *= 0.2; 
-    } 
+    if((dist > 2*GRID_X_MAX) && (dist2 > 2*GRID_X_MAX) && (dist3 > 2*GRID_X_MAX) && (dist4 > 2*GRID_X_MAX)) height = 0; 
+    else if ((dist  > (GRID_X_MAX - 5)) && (dist2  > (GRID_X_MAX - 5)) && (dist3  > (GRID_X_MAX - 5)) && (dist4  > (GRID_X_MAX - 5))) height *= 0.2; //height = -0.4;
+    //else if (dist > (GRID_X_MAX - 3)) height *= 0.5; //height = -0.1;
+    //else if (dist - (GRID_X_MAX - 0.7)> 0) height *= 0.35; 
+    //else if (dist - (GRID_X_MAX - 1.0)> 0) height *= 0.5; 
+    //else if (dist - (GRID_X_MAX - 3.0)> 0) height *= 0.7; 
+
+    return point(1) - height;
     
+    //return pow(1.0f-sqrt(pow(point(0), 2.0f) + pow(point(1), 2.0f)), 2.0f) + pow(point(2), 2.0f) - .5;
+    //return tan(3.14*point(0))-point(1);
+}
+
+float density2(Vector3f point) {
+    int x = point[0]*(1/STEP_X) + GRID_X_MAX * (1/STEP_X);  
+    int y = point[2]*(1/STEP_Z) + GRID_Z_MAX * (1/STEP_Z); 
+    float dist = closeCurve(point[0], point[2], rand() % 2, 8, 8); 
+    int r = rand() % 100; 
+ 
+    float height = h.heights[x * HEIGHTMAP_SIZE + y]/100; 
+    if(height < 0) height *= -1; 
+
+    if(dist > 2*GRID_X_MAX) height = 0; 
     else if (dist  > (GRID_X_MAX - 5)) height *= 0.1; //height = -0.4;
     else if (dist > (GRID_X_MAX - 3)) height *= 0.5; //height = -0.1;
     else if (dist - (GRID_X_MAX - 0.7)> 0) height *= 0.35; 
@@ -73,9 +98,6 @@ float density(Vector3f point) {
     else if (dist - (GRID_X_MAX - 3.0)> 0) height *= 0.7; 
 
     return point(1) - height;
-    
-    //return pow(1.0f-sqrt(pow(point(0), 2.0f) + pow(point(1), 2.0f)), 2.0f) + pow(point(2), 2.0f) - .5;
-    //return tan(3.14*point(0))-point(1);
 }
 
 //****************************************************
@@ -86,6 +108,9 @@ Viewport viewport;
 vector_tri tris;
 
 Grid *grid;
+Grid *grid2; 
+Grid *grid3; 
+
 float ustep, vstep, error, max_z = 0, focus = 71, minfocus = 3, maxfocus = 75; 
 float rotUD = 15, rotLR = 0, rotQE = 0, ytrans = 0, xtrans = 0, ztrans = 0;
 bool flat, wireframe, adaptive, dof, showrain, fog, takePic;
@@ -574,13 +599,18 @@ int main(int argc, char* argv[]) {
 
 	clock_t t = clock();
 	initCamera();
-    initializeDensityFunction();
+    initializeDensityFunction(20);
 
     rain = new Vector3f[numdrops]; 
 
 	grid = new Grid(Vector3f(0, 0, 0), stepsize, gridMax);
+    //grid2 = new Grid(Vector3f(2, 2, 2), Vector3f(0.5, 0.5, 0.5), gridMax); 
+  
+    
 
-	grid->addTriangles(&tris, density);
+	grid->addTriangles(&tris, density1);
+    //initializeDensityFunction(3); 
+    //grid2->addTriangles(&tris, density2); 
 
 	wireframe = false;
     showrain = false;
@@ -608,7 +638,7 @@ int main(int argc, char* argv[]) {
 	
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluPerspective(60.0, (float)viewport.w/(float)viewport.h, 1.0, 40.0);
+	gluPerspective(focus, (float)viewport.w/(float)viewport.h, 1.0, 40.0);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 
