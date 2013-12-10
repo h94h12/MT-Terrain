@@ -135,11 +135,11 @@ void drawSkyBox() {
         drawSkyBoxDot(sky_fdr + skybox_offset, 0.5, 2.0/3.0);
         drawSkyBoxDot(sky_bdr + skybox_offset, 0.75, 2.0/3.0);
     
-    /*glEnd(); glBegin(GL_QUADS); // Down
+    glEnd(); glBegin(GL_QUADS); // Down
         drawSkyBoxDot(sky_bdl + skybox_offset, 0.25, 1.0);
         drawSkyBoxDot(sky_fdl + skybox_offset, 0.25, 2.0/3.0);
         drawSkyBoxDot(sky_fdr + skybox_offset, 0.5, 2.0/3.0);
-        drawSkyBoxDot(sky_bdr + skybox_offset, 0.5, 1.0);*/ // down isn't visible, so cut out
+        drawSkyBoxDot(sky_bdr + skybox_offset, 0.5, 1.0); // down isn't visible, so cut out
 
     glEnd(); glBegin(GL_QUADS); // Up
         drawSkyBoxDot(sky_bul + skybox_offset, 0.25, 0.0/3.0);

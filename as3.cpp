@@ -7,9 +7,9 @@
 // Some Classes and Global Standalone Functions
 //****************************************************
 
-#define GRID_X_MAX 10
-#define GRID_Y_MAX 10
-#define GRID_Z_MAX 10
+int GRID_X_MAX = 20;
+int GRID_Y_MAX = 5;
+int GRID_Z_MAX = 20;
 
 #define STEP_X 0.1  //change to 0.05 later
 #define STEP_Y 0.1
@@ -67,8 +67,8 @@ float density1(Vector3f point) {
                             islands[i].shape,
                             islands[i].xc,
                             islands[i].yc);
-        if(!(dist[i] > 2*GRID_X_MAX)) water = false; 
-        if(!(dist[i] > (GRID_X_MAX -5))) sand = false; 
+        if(!(dist[i] > 1.2*GRID_X_MAX)) water = false; 
+        if(!(dist[i] > (GRID_X_MAX -4))) sand = false; 
     }
     float height = h.heights[x * HEIGHTMAP_SIZE + y]/150; 
     if(height < 0) height *= -1; 
@@ -614,7 +614,7 @@ void test(){
 
 
 int main(int argc, char* argv[]) {
-
+//example usage:  -circle 2 3 for a circle island centered at (2, 3)
   if(argc == 1) {
     islands.push_back(Island(0, 0, 0)); //default island is circle
   } else {
@@ -639,10 +639,20 @@ int main(int argc, char* argv[]) {
             islands.push_back(Island(AMPERSAND,atoi(argv[i + 1]), 
                                     atof(argv[i + 2]))); 
         }
+        else if(strcmp("-cruciform", argv[i]) == 0){
+            islands.push_back(Island(CRUCIFORM,atoi(argv[i + 1]), 
+                                    atof(argv[i + 2]))); 
+        }
         else if(strcmp("-clover", argv[i]) == 0){
             islands.push_back(Island(CLOVER,atoi(argv[i + 1]), 
                                     atof(argv[i + 2]))); 
         }
+        else if(strcmp("-grid", argv[i]) == 0){
+            GRID_X_MAX = atoi(argv[i + 1]);
+            GRID_Y_MAX = atoi(argv[i + 2]);
+            GRID_Z_MAX = atoi(argv[i +3]); 
+        }
+
     }
   }
 
