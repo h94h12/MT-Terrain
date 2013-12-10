@@ -129,7 +129,7 @@ void drawTris() {
     
     // strength/color of sunlight;
     light_diffuse[0] = 0.5f + strength/2;
-    light_diffuse[1] = 0.55f;// - strength/4;
+    light_diffuse[1] = 0.55f - strength/8;
     light_diffuse[2] = 0.55f - strength/4;
 
 
@@ -271,8 +271,10 @@ void display(void) {
 	glRotatef(rotUD, 1, 0, 0);
 	glRotatef(rotLR, 0, 1, 0);
 	glRotatef(rotQE, 0, 0, 1);
+    
+    
 
-    drawSkyBox();
+    
     
     if (flat) {
 		glShadeModel(GL_FLAT);
@@ -280,6 +282,7 @@ void display(void) {
 		glShadeModel(GL_SMOOTH);
 	}
 	drawTris();
+    drawSkyBox();
     
     if (showrain) drawRain();   
      

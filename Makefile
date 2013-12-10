@@ -11,8 +11,8 @@ endif
 	
 RM = /bin/rm -f 
 all: main 
-main: as3.o glUtil.o terrain.o lodepng.o Sky.o
-	$(CC) $(CFLAGS) -o as3 glUtil.o terrain.o as3.o lodepng.o Sky.o $(LDFLAGS)
+main: as3.o glUtil.o terrain.o lodepng.o Sky.o Sun.o
+	$(CC) $(CFLAGS) -o as3 glUtil.o terrain.o as3.o lodepng.o Sky.o Sun.o $(LDFLAGS)
 glUtil.o: glUtil.cpp
 	$(CC) $(CFLAGS) -c glUtil.cpp -o glUtil.o
 as3.o: as3.cpp
@@ -23,6 +23,8 @@ lodepng.o: textures/lodepng.cpp
 	$(CC) $(CFLAGS) -c textures/lodepng.cpp -o lodepng.o
 Sky.o: Sky.cpp
 	$(CC) $(CFLAGS) -c Sky.cpp -o Sky.o
+Sun.o: Sun.cpp
+	$(CC) $(CFLAGS) -c Sun.cpp -o Sun.o
 
 
 clean: 

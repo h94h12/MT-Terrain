@@ -3,21 +3,17 @@
 GLuint t_SkyBoxTop;
 
 
+float skyboxMax = 25.0;
 unsigned cloudLayerCount = 8;
 std::vector<GLuint> t_Clouds;
 std::vector<float> cloudsRot;
 std::vector<Dot> cloudlevels;
 
 
-float skyboxMax = 15.0;
+
 float a = skyboxMax;
 
 
-
-float sunRot, sunX, sunY, sunZ;
-GLuint sunTexture;
-float sunDistance;
-Dot sunPosDot;
 
 
 Dot sky_bur = Dot(-a, a, a);
@@ -73,24 +69,15 @@ GLuint CreatePerlinCloud(unsigned indx, unsigned size, bool blue) {
     for(unsigned y = 0; y < height; y++) {
         for(unsigned x = 0; x < width; x++) {
             float pn = ((hm).heights[x*height + y]-mmin)/(mmax - mmin);
-
             pn = sqrt(pn*255);
 
            
             float pn2 = 255 - ((pn-4)*25);
-            
-
-            if (blue) {
-                pn2 *= 0.2;
-                image[4 * width * y + 4 * x + 0] = std::max(0.0, 55.0-pn*8);
-                image[4 * width * y + 4 * x + 1] = std::max(0.0, 55.0-pn*8);
-                image[4 * width * y + 4 * x + 2] = 255.0-(pn*0.7);
-            } else {
-                pn2 *= 4.0/(float) cloudLayerCount; // so if there's a lot of clouds, each one is less visible
-                image[4 * width * y + 4 * x + 0] = 255.0-pn;
-                image[4 * width * y + 4 * x + 1] = 255.0-pn;
-                image[4 * width * y + 4 * x + 2] = 255.0-(pn*0.7);
-            }
+            pn2 *= 6.0/(float) cloudLayerCount; // so if there's a lot of clouds, each one is less visible
+            image[4 * width * y + 4 * x + 0] = 255.0;
+            image[4 * width * y + 4 * x + 1] = 255.0;
+            image[4 * width * y + 4 * x + 2] = 255.0;
+        
             image[4 * width * y + 4 * x + 3] = std::min((float) 255,  (std::max((float) 0, pn2)));
             
             // ease out
@@ -303,94 +290,6 @@ void drawOcean(){
     glEnable(GL_LIGHTING);
     glDisable(GL_TEXTURE_2D);
 }
-
-
-
-
-
-
-void initSun() {
-    sunRot = 0;
-    sunDistance = skyboxMax*0.85;
-    sunTexture = LoadTextureFromPNG("textures/sun.png");
-    
-    sunX = 0;//cos(sunRot);
-    sunY = sin(-sunRot)*sunDistance;
-    sunZ = cos(-sunRot)*sunDistance;
-    sunPosDot = Dot(sunX, sunY, sunZ);
-}
-
-
-Dot sun_ul = Dot(-skyboxMax/2, -skyboxMax/2, 0);
-Dot sun_ur = Dot(-skyboxMax/2,  skyboxMax/2, 0);
-Dot sun_dr = Dot(skyboxMax/2,   skyboxMax/2, 0);
-Dot sun_dl = Dot(skyboxMax/2,  -skyboxMax/2, 0);
-
-
-void updateSunRot(float sr) {
-    sunRot = sr;
-    while (sunRot > 3.14159*2) {
-        sunRot -= 3.14159*2;
-    }
-    while (sunRot < 0) {
-        sunRot += 3.14159*2;
-    }
-}
-
-void drawSun() {
-    updateSunRot(sunRot + 0.01);
-    float sunRotInDegrees = sunRot*180/3.141592;
-    
-    
-    glTexEnvf(GL_TEXTURE_2D, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-    glDepthMask(GL_FALSE);
-    
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glDisable(GL_LIGHTING);
-    glEnable(GL_TEXTURE_2D);
-    
-
-
-    glRotatef(sunRotInDegrees, 1, 0, 0);
-
-    glBindTexture(GL_TEXTURE_2D, sunTexture);
-    glBegin(GL_QUADS);
-
-        
-        drawSkyBoxDot(sun_ul + Dot(0, 0, sunDistance), 1.0, 0.0);
-        drawSkyBoxDot(sun_ur + Dot(0, 0, sunDistance), 0.0, 0.0);
-        drawSkyBoxDot(sun_dr + Dot(0, 0, sunDistance), 0.0, 1.0);
-        drawSkyBoxDot(sun_dl + Dot(0, 0, sunDistance), 1.0, 1.0);
-     glEnd(); 
-
-    glRotatef(-sunRotInDegrees, 1, 0, 0);
-
-
-    
-    glDepthMask(GL_TRUE);
-    glEnable(GL_LIGHTING);
-    glDisable( GL_TEXTURE_2D );
-}
-
-float returnSunRot() {
-    return sunRot;
-}
-
-
-
-Dot returnSunPos() {
-    //sunX = 0;//cos(sunRot);
-    //sunY = sin(-sunRot)*sunDistance;
-    //unZ = cos(-sunRot)*sunDistance;
-    return Dot(0, sin(-sunRot)*sunDistance, cos(-sunRot)*sunDistance);
-}
-
-
-
-
-
-
 
 
 
