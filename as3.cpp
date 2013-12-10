@@ -10,7 +10,7 @@
 #define GRID_Y_MAX 10
 #define GRID_Z_MAX 10
 
-#define STEP_X 0.1
+#define STEP_X 0.1  //change to 0.05 later
 #define STEP_Y 0.1
 #define STEP_Z 0.1
 #define pi 3.14159
@@ -34,32 +34,50 @@ Vector3f stepsize = Vector3f(STEP_X, STEP_Y, STEP_Z);
 void initializeDensityFunction(){
     h = HeightMap(HEIGHTMAP_SIZE, rand()); 
     h.addPerlinNoise(20); 
-    h.perturb(9, 3); 
+    h.perturb(10, 3); 
     for(int i = 0; i < 10; i++) h.erode(16); 
     h.smoothen(); 
 }
 
 float closeCurve(float x, float y){
-    int a = 3; 
-    return pow(x, 4) + 2*x*x*y*y + pow(y, 4) - pow(x, 3) + 3*x*y*y - GRID_X_MAX; 
+    int a = 6; 
+    float b = x*x + y*y; 
+    //return pow(x, 4) + 2*x*x*y*y + pow(y, 4) - pow(x, 3) + 3*x*y*y - GRID_X_MAX*1.5;  //cruciform
+    return pow(y, 6) - (pow(a*x, 2) - pow(x, 6));  //butterfly curve
+    //return pow(x, 6) + 3*(x, 4)*(y*y -3) + 3*x*x*y*y*(y*y + 2) + pow(y, 6) - pow(y, 4);  //cycloid of ceva, get pacman shape
+    //return pow(x*x + y*y, 3) - 4*a*a*x*x*y*y; //four leaf clover 
+  //return -52521875*pow(a, 12) - 1286250*pow(a, 10)*b - 32025*pow(a, 8)*b*b + 93312*pow(a, 7)*(pow(x, 5) - 10*x*x*x*y*y + 5*x*pow(y, 4)) - 812*pow(a, 6)*pow(b, 3) - 21*pow(a, 4)*pow(b, 4) - 42*a*a*pow(b, 5) + pow(b, 6); 
+  
 }
 
 float density(Vector3f point) {
     int x = point[0]*(1/STEP_X) + GRID_X_MAX * (1/STEP_X);  
     int y = point[2]*(1/STEP_Z) + GRID_Z_MAX * (1/STEP_Z); 
     float dist = closeCurve(point[0], point[2]); 
+    int r = rand() % 100; 
  
-    float height = h.heights[x * HEIGHTMAP_SIZE + y]/100; 
-    if (height < 0) height *= -1; 
-    if(dist > 0) height *= 0.3; 
-    if(dist > 0.1) height *= 0.4; 
-    if (dist > (GRID_X_MAX - 1) ) height = 0; 
-    else if (dist  > (GRID_X_MAX - 2)) height *= 0.1; //height = -0.4;
+    float height = h.heights[x * HEIGHTMAP_SIZE + y]/150; 
+    if(height < 0) height *= -1; 
+    
+    /*if(dist > 4 && (y % 3 == 0) ) height = 0;
+    if(dist > 3 && rand() % 4 == 3 ) height = 0.02;
+    if(dist > 5) height = 0;  
+    
+    if(dist > 3.5) height *= 0.3; 
+    if (dist > 2) height *= 0.2; */
+    
+    if(dist > 2*GRID_X_MAX) height = 0; 
+    else if (dist > (GRID_X_MAX - 1) ){
+      if(r % 4 == 0) height *= 0.5;
+      else height *= 0.2; 
+    } 
+    
+    else if (dist  > (GRID_X_MAX - 5)) height *= 0.1; //height = -0.4;
     else if (dist > (GRID_X_MAX - 3)) height *= 0.5; //height = -0.1;
     else if (dist - (GRID_X_MAX - 0.7)> 0) height *= 0.35; 
     else if (dist - (GRID_X_MAX - 1.0)> 0) height *= 0.5; 
     else if (dist - (GRID_X_MAX - 3.0)> 0) height *= 0.7; 
- 
+
     return point(1) - height;
     
     //return pow(1.0f-sqrt(pow(point(0), 2.0f) + pow(point(1), 2.0f)), 2.0f) + pow(point(2), 2.0f) - .5;
@@ -71,15 +89,11 @@ float density(Vector3f point) {
 //****************************************************
 Viewport viewport;
 
-//Vector3f gridMax = Vector3f(4, 4, 4); 
-//Vector3f stepsize = Vector3f(.1, .1, .1); 
-//Vector3f stepsize = Vector3f(.05, .05, .05); 
-
 vector_tri tris;
 
 Grid *grid;
-float ustep, vstep, error, max_z = 0, focus = 45, minfocus = 3, maxfocus = 45; 
-float rotUD = 6, rotLR = 0, rotQE = 0, ytrans = 0, xtrans = 0, ztrans = 0;
+float ustep, vstep, error, max_z = 0, focus = 71, minfocus = 3, maxfocus = 75; 
+float rotUD = 15, rotLR = 0, rotQE = 0, ytrans = 0, xtrans = 0, ztrans = 0;
 bool flat, wireframe, adaptive, dof, showrain, fog;
 GLfloat mat_specular[] = {0.8f, 0.8f, 0.8f, 0.0f};
 GLfloat mat_shininess[] = {128.0f};
@@ -93,6 +107,10 @@ GLfloat light_ambient[] = {0.07f, 0.02f, 0.05f, 1.0f};
 
 bool mouseButtony_down_left = false, mouseButtonx_down = false, mouseButtony_down_right = false; 
 int mouse_yClick_left = 0, mouse_xClick = 0,mouse_yClick_right = 0;  
+
+GLuint vs, fs, sp; //shaders 
+GLfloat waveTime = 0.0, waveWidth = 0.1, waveHeight = 3.0, waveFreq = 0.1; 
+GLint waveTimeLoc, waveWidthLoc, waveHeightLoc; 
 
 GLint fogMode; 
 Vector3f* rain; 
@@ -257,12 +275,39 @@ void reshape(int w, int h) {
 	gluLookAt(0, 0, 5, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
 }
 
+void drawOceanShader(){
+    glUseProgram(sp); 
+    
+    /* Change time */
+    glUniform1f(waveTimeLoc, waveTime);
+    glUniform1f(waveWidthLoc, waveWidth);
+    glUniform1f(waveHeightLoc, waveHeight);
+    
+    
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    float subdiv = 1;  
+    glBegin(GL_QUADS); 
+    for(int i = -GRID_X_MAX; i < GRID_X_MAX; i++){
+        for(int j = -GRID_Z_MAX; j < GRID_Z_MAX; j++){
+                glVertex2f(i, j);
+                glVertex2f(i + subdiv,  j); 
+                glVertex2f(i + subdiv,j + subdiv);
+                glVertex2f(i, j + subdiv);
+        }
+    }
+    glEnd(); 
+    waveTime += waveFreq; 
+    
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); 
+    
+}
+
 void display(void) {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	 glMatrixMode(GL_PROJECTION);
         glLoadIdentity();
-        gluPerspective(focus, (GLfloat) viewport.w/ (GLfloat) viewport.h, 1.0, 40.0);
+        gluPerspective(focus, (GLfloat) viewport.w/ (GLfloat) viewport.h, 0.5, 40.0);
         glMatrixMode(GL_MODELVIEW);
 
 	glPushMatrix();
@@ -287,15 +332,16 @@ void display(void) {
     if (showrain) drawRain();   
      
     drawSun(); // behind clouds?
+    
+    //draw reflection
+       
+    drawClouds();    
+    glMatrixMode(GL_MODELVIEW);
+    glScalef(1, -1, 1); 
+    drawTris(); 
     drawOcean();
+    //drawOceanShader(); 
     drawClouds(); // clouds have transparency, so draw last!
-    
-    
-    //need to draw reflection
-    
-   // glMatrixMode(GL_MODELVIEW);
-   // glScalef(1, -1, 1); 
-   // drawTris(); 
 
 	glPopMatrix();
 	glutSwapBuffers();
@@ -386,6 +432,7 @@ void mouseMotion(int x, int y){
 }
 void debug(){
     cout<<"The rotUD is"<<rotUD<<endl; 
+    cout<<"The focus is"<<focus<<endl; 
 }
 
 void keyboard(unsigned char key, int x, int y) {
@@ -402,8 +449,8 @@ void keyboard(unsigned char key, int x, int y) {
             fogMode = GL_EXP;
             glFogi (GL_FOG_MODE, fogMode);
             glFogfv (GL_FOG_COLOR, fogColor);
-            glFogf (GL_FOG_DENSITY, 0.25);
-            glHint (GL_FOG_HINT, GL_DONT_CARE);
+            glFogf (GL_FOG_DENSITY, 0.10);
+            glHint (GL_FOG_HINT, GL_NICEST);
             glFogf (GL_FOG_START, 1.0);
             glFogf (GL_FOG_END, 5.0);
             }
@@ -512,6 +559,7 @@ void test(){
     }
 }
 
+
 int main(int argc, char* argv[]) {
     
     cout << "start" << endl;
@@ -548,11 +596,8 @@ int main(int argc, char* argv[]) {
     initRain(); 
     initOcean();
     initTerrainTextures();
-    //grassTexture = LoadTextureFromPNG("textures/grass.png");
+    cout << "Done with initialization " << endl;
     
-    //grassTexture = LoadTextureFromPNG("textures/sm64_ocean.png");
-    
-	
 	glClearColor(0, 0, 0, 0);
 	
 	glMatrixMode(GL_PROJECTION);
@@ -573,7 +618,7 @@ int main(int argc, char* argv[]) {
 	glutReshapeFunc(reshape);
 	glutKeyboardFunc(keyboard);
 	glutSpecialFunc(processSpecialKeys);
-        glutMouseFunc (mouseButton);
+    glutMouseFunc (mouseButton);
     glutMotionFunc (mouseMotion);
 	glutIdleFunc(idle);
 	glutMainLoop();

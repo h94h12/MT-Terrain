@@ -7,7 +7,7 @@ Triangle::Triangle(Vector3f v1, Vector3f v2, Vector3f v3) {
     this->v3 = v3;
 }
 
-
+GLuint treeTexture, treeTexture2; 
 GLuint rockTexture; // locally used only
 GLuint grassTexture;
 GLuint sandTexture;
@@ -15,7 +15,55 @@ GLuint sandrock1Texture; // fades from sand to rock
 GLuint sandrock2Texture;
 GLuint sandrock3Texture;
 
+
+
+void drawTree(Vector3f v1, Vector3f v2){
+    float x1 = v1(0); 
+    float x2 = 0.7 * v1(0) + 0.3 * v2(0);        //(v1(0) + v2(0))* 0.5; 
+    float x3 = 0.2 * v1(0) + 0.8 * v2(0); 
+    float y1 = v1(1); 
+    float y2 =  0.7 * v1(1) + 0.3 * v2(1);
+    float y3 = 0.2 * v1(1) + 0.8 * v2(1);           //(v1(1) + v2(1))*0.5; 
+    float z1 = v1(2); 
+    float z2 =  0.7 * v1(2) + 0.3 * v2(2);
+    float z3 = 0.2 * v1(2) + 0.8 * v2(2);        //(v2(2) + v2(2))*0.5; 
+
+    float h = 0.04;
+    float n = 0.017; 
+
+
+    glBegin(GL_TRIANGLES);
+          glTexCoord2f(0.23, 0.5); glVertex3f(x1, y1, z1);
+          glTexCoord2f(0.67, 0.3); glVertex3f(x2, y2, z2); 
+          glTexCoord2f(0.33, 0.81); glVertex3f((x1 + x2) * 0.5, y1 + h , (z1 + z2) * 0.5); 
+
+          glTexCoord2f(0.1, 0.9); glVertex3f(x1, y1 + n, z1);
+          glTexCoord2f(0.67, 0.3); glVertex3f(x2, y2 + n, z2); 
+          glTexCoord2f(0.33, 0.81); glVertex3f((x1 + x2) * 0.5, y1 + h + n , (z1 + z2) * 0.5); 
+          
+          glTexCoord2f(0.4, 0.3); glVertex3f(v2(0), v2(1), v2(2));
+          glTexCoord2f(0.67, 0.3); glVertex3f(x3, y3, z3); 
+          glTexCoord2f(0.33, 0.81); glVertex3f((v2(0) + x3) * 0.5, y3 + h , (v2(2) + z3) * 0.5); 
+          
+          glTexCoord2f(0.1, 0.9); glVertex3f(v2(0), v2(1) + n, v2(2));
+          glTexCoord2f(0.98, 0.13); glVertex3f(x3, y3 + n, z3); 
+          glTexCoord2f(0.2, 0.41); glVertex3f((v2(0) + x3) * 0.5, y3 + h + n , (v2(2) + z3) * 0.5); 
+          
+          glTexCoord2f(0.1, 0.9); glVertex3f(v2(0), v2(1) + 2*n, v2(2));
+          glTexCoord2f(0.67, 0.23); glVertex3f(x3, y3 + 2*n, z3); 
+          glTexCoord2f(0.13, 0.81); glVertex3f((v2(0) + x3) * 0.5, y3 + h + 2*n , (v2(2) + z3) * 0.5); 
+    glEnd(); 
+    
+ 
+}
+
+
 void initTerrainTextures() {
+    //treeTexture = LoadTextureFromPNG("textures/tree.png"); 
+    //treeTexture2 = LoadTextureFromPNG("textures/tree2.png"); 
+    treeTexture = LoadTextureFromPNG("textures/grass.png"); 
+    treeTexture2 = LoadTextureFromPNG("textures/grass.png"); 
+    
     grassTexture = LoadTextureFromPNG("textures/grass.png");
     rockTexture = LoadTextureFromPNG("textures/rock.png");
     sandTexture = LoadTextureFromPNG("textures/sand.png");
@@ -40,12 +88,25 @@ void Triangle::draw() {
         double mmax = max(max(v1(1), v2(1)), v3(1));
         double dist = mmax - mmin;
         
-        if (height < 0.005) return; 
+        if (height < 0.01) return; 
         if (height < 0.05) {
+                glBindTexture(GL_TEXTURE_2D, treeTexture); 
+                drawTree(v1, v2); 
+            
             glBindTexture(GL_TEXTURE_2D, sandTexture);
-        } else if (height < 0.11) {
+          
+        }
+        else if (height < 0.11) {
+             if((int)(v1(0) * 10) % 2 == 1){
+                glBindTexture(GL_TEXTURE_2D, treeTexture2); 
+                drawTree(v1, v2); 
+            }
             glBindTexture(GL_TEXTURE_2D, sandrock1Texture);
-        } else if (height < 0.17) {
+        } else if (height < 0.20) {
+             if((int)(v1(0) * 10) % 2 == 1){
+                glBindTexture(GL_TEXTURE_2D, treeTexture2); 
+                drawTree(v1, v2); 
+            }
             glBindTexture(GL_TEXTURE_2D, sandrock2Texture);
         } else if (height < 0.25) {
             glBindTexture(GL_TEXTURE_2D, sandrock3Texture);
@@ -91,6 +152,9 @@ void Tetrahedron::addTriangles(vector_tri *triangles, float (*func)(Vector3f)) {
     bool v4p = v4v > 0;
 
     Vector3f cp1, cp2, cp3, cp4;
+    
+    int rand1 = rand() % 3 == 1; 
+    int rand2 = rand() % 2 == 1; 
 
     if ((v1p&&v2p&&v3p&&v4p)||(!v1p&&!v2p&&!v3p&&!v4p)) {
         return;
@@ -142,6 +206,7 @@ void Tetrahedron::addTriangles(vector_tri *triangles, float (*func)(Vector3f)) {
         //(&tris2)->push_back(Triangle(cp1, cp2, cp3));
         //(&tris2)->push_back(Triangle(cp2, cp3, cp4)); 
     }
+
 }
 
 /*
