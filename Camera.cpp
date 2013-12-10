@@ -25,11 +25,11 @@ void invertIMG(int width, int height) {
 
 void takePicture() {
 	glReadPixels(0, 0, viewport.w-1, viewport.h-1, GL_RGBA, GL_UNSIGNED_BYTE, arr);
-	invertIMG(viewport.w-1, viewport.h);	
+	invertIMG(viewport.w-1, viewport.h-1);
 }
 
 void writeImage(const char * filename) {
-	unsigned error = lodepng::encode(std::string(filename), arr, viewport.w-1, viewport.h-1);	
+	unsigned error = lodepng::encode(std::string(filename), arr, viewport.w-1, viewport.h-1);
 }
 
 void renderBlackandWhite() {
@@ -49,7 +49,7 @@ void renderBlackandWhite() {
 // G B G 
 void bayerFilter() {
 	int width = (viewport.w-1)/3*3;
-	int height = (viewport.h-1)/3*3;
+	int height = (viewport.h)/3*3;
 	for (int i = 0; i < height; i+=3) {
 		for (int j = 0; j < width; j+=3) {
 			unsigned char* loc00 = (arr + (i+0)*(width*4) + (j+0)*4);
@@ -81,5 +81,4 @@ void bayerFilter() {
 			*(loc22 + 2) = *(loc21 + 2);
 		} 
 	}			
-			
 }
