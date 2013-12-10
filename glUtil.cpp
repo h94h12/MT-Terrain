@@ -309,7 +309,7 @@ GLuint LoadTextureFromPNG(const char * filename, unsigned alpha) {
     if (alpha < 255) {
         for(unsigned y = 0; y < h; y++) {
             for(unsigned x = 0; x < w; x++) {
-                image[4 * w * y + 4 * x + 3] = alpha;
+                image[4 * w * y + 4 * x + 3] *= alpha/255.0;
             }
         }
     }

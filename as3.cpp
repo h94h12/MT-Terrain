@@ -356,18 +356,16 @@ void display(void) {
 	glShadeModel(GL_SMOOTH);
     }
 
+
+
     drawTris();
     drawSkyBox();
-    
-     
-     
+
     drawSun(); // behind clouds?
-    
-    //draw reflection
-       
+ 
     drawClouds(); 
 
-if (showrain) drawRain();  
+    if (showrain) drawRain();  
 
 
     glMatrixMode(GL_MODELVIEW);
@@ -380,7 +378,10 @@ if (showrain) drawRain();
 
     glScalef(1, -1, 1); 
     drawOcean(); 
+    drawSunBloom();
     glScalef(1, -1, 1);  
+
+
 
 	glPopMatrix();
 	glutSwapBuffers();

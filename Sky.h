@@ -18,6 +18,7 @@ void drawCloudsReflection();
 void drawOcean();
 
 void drawSun();
+void drawSunBloom();
 Dot returnSunPos();
 float returnSunRot();
 void updateSunRot(float);
