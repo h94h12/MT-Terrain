@@ -1,7 +1,7 @@
 #include "Sky.h"
 
 
-float skyboxMax2 = 25.0;
+float skyboxMax2 = 24.0;
 
 float sunRot, sunSpin1, sunSpin2, sunX, sunY, sunZ, sunDistance;
 GLuint sunTexture, sunRaysTexture;

@@ -439,19 +439,19 @@ void mouseMotion(int x, int y){
     }
     if(mouseButtonx_down){
         if(x < mouse_xClick){//right
-            rotLR -= 0.001 * abs((int)(x - mouse_xClick))*( 1.0f*(focus/60.0));
+            rotLR -= 0.001 * abs((int)(x - mouse_xClick))*( 2.0f);//*(focus/60.0));
         }
         else{//left
-            rotLR += 0.001 * abs((int)(x - mouse_xClick)) *(1.0f*(focus/60.0));
+            rotLR += 0.001 * abs((int)(x - mouse_xClick)) *(2.0f);//*(focus/60.0));
         }
     }
     if(mouseButtony_down_right){
         if(y < mouse_yClick_right){
-            rotUD -=  0.001 * abs((int)(y - mouse_yClick_right))*1.0f*(focus/60.0); 
+            rotUD -=  0.001 * abs((int)(y - mouse_yClick_right))*2.0f;//*(focus/60.0); 
             if(rotUD < 6) rotUD = 6; 
         }
         else{
-            rotUD +=  0.001 * abs((int)(y - mouse_yClick_right))*1.0f*(focus/60.0);
+            rotUD +=  0.001 * abs((int)(y - mouse_yClick_right))*2.0f;//*(focus/60.0);
             if(rotUD > 26) rotUD = 26; 
         }
         
@@ -480,7 +480,7 @@ void keyboard(unsigned char key, int x, int y) {
             fogMode = GL_EXP;
             glFogi (GL_FOG_MODE, fogMode);
             glFogfv (GL_FOG_COLOR, fogColor);
-            glFogf (GL_FOG_DENSITY, 0.10);
+            glFogf (GL_FOG_DENSITY, 0.05);
             glHint (GL_FOG_HINT, GL_NICEST);
             glFogf (GL_FOG_START, 1.0);
             glFogf (GL_FOG_END, 5.0);
@@ -490,12 +490,10 @@ void keyboard(unsigned char key, int x, int y) {
          if (fogMode == GL_EXP) {
             fogMode = GL_EXP2;
             printf ("Fog mode is GL_EXP2\n");
-         }
-         else if (fogMode == GL_EXP2) {
+         } else if (fogMode == GL_EXP2) {
             fogMode = GL_LINEAR;
             printf ("Fog mode is GL_LINEAR\n");
-         }
-         else if (fogMode == GL_LINEAR) {
+         }else if (fogMode == GL_LINEAR) {
             fogMode = GL_EXP;
             printf ("Fog mode is GL_EXP\n");
          }

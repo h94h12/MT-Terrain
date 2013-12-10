@@ -3,7 +3,7 @@
 GLuint t_SkyBoxTop;
 
 
-float skyboxMax = 25.0;
+float skyboxMax = 24.0;
 unsigned cloudLayerCount = 8;
 std::vector<GLuint> t_Clouds;
 std::vector<float> cloudsRot;
@@ -234,7 +234,7 @@ void initOcean(){
     oceanTexture = LoadTextureFromPNG("textures/water.png");
     //sandTexture = LoadTextureFromPNG("textures/water.png");
     //wavesTexture0 = CreatePerlinCloud(0, 512, true);
-    wavesTexture = LoadTextureFromPNG("textures/water.png", 70);
+    wavesTexture = LoadTextureFromPNG("textures/water.png", 140);
     waveCount = 0;
 }
 
