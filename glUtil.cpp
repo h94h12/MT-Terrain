@@ -7,6 +7,12 @@ Triangle::Triangle(Vector3f v1, Vector3f v2, Vector3f v3) {
     this->v3 = v3;
 }
 
+Island::Island(int s, float x, float y ){
+    shape = s;
+    xc = x; 
+    yc = y; 
+}
+
 GLuint treeTexture, treeTexture2; 
 GLuint rockTexture; // locally used only
 GLuint grassTexture;

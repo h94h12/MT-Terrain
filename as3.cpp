@@ -19,6 +19,8 @@
 #define HEIGHTMAP_SIZE (int)(2 * GRID_X_MAX * (1/STEP_X))
 
 HeightMap h;
+vector<Island> islands; 
+
 
 //GLuint grassTexture;
 
@@ -33,55 +35,54 @@ void initializeDensityFunction(int noise){
     h.smoothen(); 
 }
 //xs and ys are shift amounts
-float closeCurve(float x, float y, int id, float xs, float ys){
-    int a = 2; 
-    float b = x*x + y*y; 
+float closeCurve(float x1, float y1, int id, float xs, float ys){
+    int a = 6; 
+    float x = x1 - xs;
+    float y = y1 - ys; 
     if(id == 0)
-        return pow(x, 4) + 2*x*x*y*y + pow(y, 4) - pow(x, 3) + 3*x*y*y - GRID_X_MAX*1.5;  //cruciform
+        return x*x + y*y - 3;  //circle 
     else if(id == 1)
-        return pow(y - ys, 6) - (pow(a*(x - xs), 2) - pow(x - xs, 6));  //butterfly curve
+        return pow(y, 6) - (pow(a*x, 2) - pow(x, 6));  //butterfly curve
     else if (id == 2)
-        return pow(x - xs, 6) + 3*(x - xs, 4)*((y - ys)*(y - ys) -3) + 3*(x - xs)*(x - xs)*(y- ys)*(y - ys)*((y - ys)*(y - ys) + 2) + pow((y - ys), 6) - pow((y - ys), 4);  //cycloid of ceva, get pacman shape
-    return pow((x - xs)*(x - xs) + (y - ys)*(y - ys), 3) - 4*a*a*(x - xs)*(x - xs)*(y - ys)*(y - ys); //four leaf clover 
-  //return -52521875*pow(a, 12) - 1286250*pow(a, 10)*b - 32025*pow(a, 8)*b*b + 93312*pow(a, 7)*(pow(x, 5) - 10*x*x*x*y*y + 5*x*pow(y, 4)) - 812*pow(a, 6)*pow(b, 3) - 21*pow(a, 4)*pow(b, 4) - 42*a*a*pow(b, 5) + pow(b, 6); 
+        return pow(x, 6) + 3*(x, 4)*(y*y -3) + 3*x*x*y*y*(y*y + 2) + pow(y, 6) - pow(y, 4);  //cycloid of ceva, get pacman shape
+    else if (id == 3) 
+        return pow(x * x - 3 * x + y*y, 2) - 4*(2 - x)*x*x; //links curve
+    else if (id == 4)
+        return -((x-1)*(2*x - 3)*(y*y - x*x) - 4*pow((x*x - 2*x + y*y), 2)); //ampersand curve
+    else if (id == 5)
+        return pow(x, 4) + 2*(x)*(x)*y*y + pow(y, 4) - pow(x, 3) + 3*x*y*y - GRID_X_MAX*1.5;  //cruciform
+    return pow(x*x + y*y, 3) - 4*a*a*x*x*y*y; //four leaf clover 
   
-}
+  }
 
 float density1(Vector3f point) {
+    bool water = true;
+    bool sand = true;  
     int x = point[0]*(1/STEP_X) + GRID_X_MAX * (1/STEP_X);  
     int y = point[2]*(1/STEP_Z) + GRID_Z_MAX * (1/STEP_Z); 
-    float dist = closeCurve(point[0], point[2], 0, 0, 0); 
-    float dist2 = closeCurve(point[0], point[2], 1, 3, 3); 
-    float dist3 = closeCurve(point[0], point[2], 2, -4, 4); 
-    float dist4 = closeCurve(point[0], point[2], 3, -2, -2);  
-    
-    
-    int r = rand() % 100; 
- 
+    float* dist = new float[islands.size()]; 
+    for(int i = 0; i < islands.size(); i++){
+        dist[i] = closeCurve(point[0],  
+                            point[2], 
+                            islands[i].shape,
+                            islands[i].xc,
+                            islands[i].yc);
+        if(!(dist[i] > 2*GRID_X_MAX)) water = false; 
+        if(!(dist[i] > (GRID_X_MAX -5))) sand = false; 
+    }
     float height = h.heights[x * HEIGHTMAP_SIZE + y]/150; 
     if(height < 0) height *= -1; 
     
-    /*if(dist > 4 && (y % 3 == 0) ) height = 0;
-    if(dist > 3 && rand() % 4 == 3 ) height = 0.02;
-    if(dist > 5) height = 0;  
-    
-    if(dist > 3.5) height *= 0.3; 
-    if (dist > 2) height *= 0.2; */
-    
-    if((dist > 2*GRID_X_MAX) && (dist2 > 2*GRID_X_MAX) && (dist3 > 2*GRID_X_MAX) && (dist4 > 2*GRID_X_MAX)) height = 0; 
-    else if ((dist  > (GRID_X_MAX - 5)) && (dist2  > (GRID_X_MAX - 5)) && (dist3  > (GRID_X_MAX - 5)) && (dist4  > (GRID_X_MAX - 5))) height *= 0.2; //height = -0.4;
-    //else if (dist > (GRID_X_MAX - 3)) height *= 0.5; //height = -0.1;
-    //else if (dist - (GRID_X_MAX - 0.7)> 0) height *= 0.35; 
-    //else if (dist - (GRID_X_MAX - 1.0)> 0) height *= 0.5; 
-    //else if (dist - (GRID_X_MAX - 3.0)> 0) height *= 0.7; 
+    if(water) height = 0;
+    else if (sand) height *= 0.2; 
 
-    return point(1) - height;
+   // if((dist > 2*GRID_X_MAX) && (dist2 > 2*GRID_X_MAX) && (dist3 > 2*GRID_X_MAX) && (dist4 > 2*GRID_X_MAX)) height = 0; 
+   // else if ((dist  > (GRID_X_MAX - 5)) && (dist2  > (GRID_X_MAX - 5)) && (dist3  > (GRID_X_MAX - 5)) && (dist4  > (GRID_X_MAX - 5))) height *= 0.2; //height = -0.4;
     
-    //return pow(1.0f-sqrt(pow(point(0), 2.0f) + pow(point(1), 2.0f)), 2.0f) + pow(point(2), 2.0f) - .5;
-    //return tan(3.14*point(0))-point(1);
+    return point(1) - height;
 }
 
-float density2(Vector3f point) {
+/*float density2(Vector3f point) {
     int x = point[0]*(1/STEP_X) + GRID_X_MAX * (1/STEP_X);  
     int y = point[2]*(1/STEP_Z) + GRID_Z_MAX * (1/STEP_Z); 
     float dist = closeCurve(point[0], point[2], rand() % 2, 8, 8); 
@@ -98,7 +99,7 @@ float density2(Vector3f point) {
     else if (dist - (GRID_X_MAX - 3.0)> 0) height *= 0.7; 
 
     return point(1) - height;
-}
+}*/
 
 //****************************************************
 // Global Variables
@@ -613,6 +614,40 @@ void test(){
 
 
 int main(int argc, char* argv[]) {
+
+  if(argc == 1) {
+    islands.push_back(Island(0, 0, 0)); //default island is circle
+  } else {
+    for(int i = 1; i < argc; i++){
+        if(strcmp("-circle", argv[i]) == 0){
+            islands.push_back(Island(CIRCLE,atoi(argv[i + 1]), 
+                                    atof(argv[i + 2]))); 
+        }
+        else if(strcmp("-butterfly", argv[i]) == 0){
+            islands.push_back(Island(BUTTERFLY,atoi(argv[i + 1]), 
+                                    atof(argv[i + 2]))); 
+        }
+        else if(strcmp("-cycloid", argv[i]) == 0){
+            islands.push_back(Island(CYCLOID,atoi(argv[i + 1]), 
+                                    atof(argv[i + 2]))); 
+        }
+        else if(strcmp("-links", argv[i]) == 0){
+            islands.push_back(Island(LINKS, atoi(argv[i + 1]), 
+                                    atof(argv[i + 2]))); 
+        }
+        else if(strcmp("-ampersand", argv[i]) == 0){
+            islands.push_back(Island(AMPERSAND,atoi(argv[i + 1]), 
+                                    atof(argv[i + 2]))); 
+        }
+        else if(strcmp("-clover", argv[i]) == 0){
+            islands.push_back(Island(CLOVER,atoi(argv[i + 1]), 
+                                    atof(argv[i + 2]))); 
+        }
+    }
+  }
+
+
+
     
   cout << "start" << endl;
 	viewport.h = 800;
@@ -625,13 +660,7 @@ int main(int argc, char* argv[]) {
     rain = new Vector3f[numdrops]; 
 
 	grid = new Grid(Vector3f(0, 0, 0), stepsize, gridMax);
-    //grid2 = new Grid(Vector3f(2, 2, 2), Vector3f(0.5, 0.5, 0.5), gridMax); 
-  
-    
-
 	grid->addTriangles(&tris, density1);
-    //initializeDensityFunction(3); 
-    //grid2->addTriangles(&tris, density2); 
 
 	wireframe = false;
     showrain = false;

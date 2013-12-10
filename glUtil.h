@@ -46,9 +46,18 @@ using namespace std;
 #define epsilon 0.0001f
 #define INVALID_UNIFORM_LOCATION 0xFFFFFFFF
 
+#define CIRCLE 0
+#define BUTTERFLY 1
+#define CYCLOID 2
+#define LINKS 3
+#define AMPERSAND 4
+#define CRUCIFORM 5
+#define CLOVER 6
+
 class Grid;
 class Triangle;
 class Viewport;
+class Island; 
 
 void initTerrainTextures();
 
@@ -94,6 +103,14 @@ private:
 	Vector3f v1, v2, v3;
 };
 
+class Island{
+public:
+	//centered at (x, c)
+	Island(int, float, float);
+	int shape;
+	float xc; 
+	float yc; 
+};
 
 // SKYDOME
 
