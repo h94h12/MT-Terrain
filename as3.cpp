@@ -20,7 +20,7 @@ int GRID_Z_MAX = 20;
 
 HeightMap h;
 vector<Island> islands; 
-
+float noise = 20; 
 
 //GLuint grassTexture;
 
@@ -664,9 +664,15 @@ int main(int argc, char* argv[]) {
         } else if (strcmp("-filename", argv[i]) == 0) {
 	    filename = argv[i+1];
 	    i++;
-	}
+        }
+        else if (strcmp("-noise", argv[i]) == 0) {
+	    noise = atof(argv[i+1]);
+	    i++;
+        }
+	
     }
-  }
+}
+  
 
 
 
@@ -677,7 +683,7 @@ int main(int argc, char* argv[]) {
 
 	clock_t t = clock();
 	initCamera();
-    initializeDensityFunction(20);
+    initializeDensityFunction(noise);
 
     rain = new Vector3f[numdrops]; 
 
@@ -732,7 +738,3 @@ int main(int argc, char* argv[]) {
 	glutMainLoop();
 	return 0;
 }
-
-
-
-
