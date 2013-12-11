@@ -112,6 +112,8 @@ Grid *grid;
 Grid *grid2; 
 Grid *grid3; 
 
+char * filename = "Kukri";
+
 float ustep, vstep, error, max_z = 0, focus = 71, minfocus = 3, maxfocus = 75; 
 float rotUD = 15, rotLR = 0, rotQE = 0, ytrans = 0, xtrans = 0, ztrans = 0;
 bool flat, wireframe, adaptive, dof, showrain, fog, takePic;
@@ -346,7 +348,7 @@ void display(void) {
 
 	glPushMatrix();
 	
-    glTranslatef(xtrans, ytrans, ztrans);    
+	glTranslatef(xtrans, ytrans, ztrans);    
 	glRotatef(rotUD, 1, 0, 0);
 	glRotatef(rotLR, 0, 1, 0);
 	glRotatef(rotQE, 0, 0, 1);
@@ -390,12 +392,12 @@ void display(void) {
     if(takePic) {
         takePic = false;
         takePicture();
-        writeImage("Sex_Piston.png");
+        writeImage(filename);
         renderBlackandWhite();
-        writeImage("Sex_Pistol_BW.png");
+        writeImage(filename);
         takePicture();
         bayerFilter();
-        writeImage("Sex_Pistol_Bayer.png");
+        writeImage(filename);
     }
 } 
 
@@ -621,38 +623,48 @@ int main(int argc, char* argv[]) {
     for(int i = 1; i < argc; i++){
         if(strcmp("-circle", argv[i]) == 0){
             islands.push_back(Island(CIRCLE,atoi(argv[i + 1]), 
-                                    atof(argv[i + 2]))); 
+                                    atof(argv[i + 2])));
+	    i+=2;
         }
         else if(strcmp("-butterfly", argv[i]) == 0){
             islands.push_back(Island(BUTTERFLY,atoi(argv[i + 1]), 
                                     atof(argv[i + 2]))); 
+	    i+=2;
         }
         else if(strcmp("-cycloid", argv[i]) == 0){
             islands.push_back(Island(CYCLOID,atoi(argv[i + 1]), 
                                     atof(argv[i + 2]))); 
+	    i+=2;
         }
         else if(strcmp("-links", argv[i]) == 0){
             islands.push_back(Island(LINKS, atoi(argv[i + 1]), 
                                     atof(argv[i + 2]))); 
+	    i+=2;
         }
         else if(strcmp("-ampersand", argv[i]) == 0){
             islands.push_back(Island(AMPERSAND,atoi(argv[i + 1]), 
                                     atof(argv[i + 2]))); 
+	    i+=2;
         }
         else if(strcmp("-cruciform", argv[i]) == 0){
             islands.push_back(Island(CRUCIFORM,atoi(argv[i + 1]), 
-                                    atof(argv[i + 2]))); 
+                                    atof(argv[i + 2])));
+	    i+=2;
         }
-        else if(strcmp("-clover", argv[i]) == 0){
+        else if(strcmp("-clover", argv[i]) == 0) {
             islands.push_back(Island(CLOVER,atoi(argv[i + 1]), 
-                                    atof(argv[i + 2]))); 
+                                    atof(argv[i + 2])));
+	    i+=2;
         }
         else if(strcmp("-grid", argv[i]) == 0){
             GRID_X_MAX = atoi(argv[i + 1]);
             GRID_Y_MAX = atoi(argv[i + 2]);
-            GRID_Z_MAX = atoi(argv[i +3]); 
-        }
-
+            GRID_Z_MAX = atoi(argv[i +3]);
+	    i+=3;
+        } else if (strcmp("-filename", argv[i]) == 0) {
+	    filename = argv[i+1];
+	    i++;
+	}
     }
   }
 

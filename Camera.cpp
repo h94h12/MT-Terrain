@@ -1,6 +1,7 @@
 #include "Camera.h"
 
 unsigned char *arr = NULL;
+int size = 0;
 
 void initCamera() {
 	if (arr != NULL) {
@@ -29,7 +30,12 @@ void takePicture() {
 }
 
 void writeImage(const char * filename) {
-	unsigned error = lodepng::encode(std::string(filename), arr, viewport.w-1, viewport.h-1);
+	stringstream ss;
+	string file;
+	ss << filename << size << ".png";
+	ss >> file;
+	size++;
+	unsigned error = lodepng::encode(file, arr, viewport.w-1, viewport.h-1);
 }
 
 void renderBlackandWhite() {

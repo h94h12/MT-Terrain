@@ -6,6 +6,7 @@
 #include <functional>
 #include <ctime>
 #include <iostream>
+#include <sstream>
 #include <fstream>
 #include <limits.h>
 #include <string.h>
