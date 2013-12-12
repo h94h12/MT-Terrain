@@ -12,7 +12,7 @@ endif
 RM = /bin/rm -f 
 all: main 
 main: as3.o glUtil.o terrain.o lodepng.o Sky.o Sun.o Camera.o
-	$(CC) $(CFLAGS) -o as3 glUtil.o terrain.o as3.o lodepng.o Camera.o Sky.o Sun.o $(LDFLAGS)
+	$(CC) $(CFLAGS) -o final glUtil.o terrain.o as3.o lodepng.o Camera.o Sky.o Sun.o $(LDFLAGS)
 glUtil.o: glUtil.cpp
 	$(CC) $(CFLAGS) -c glUtil.cpp -o glUtil.o
 as3.o: as3.cpp
