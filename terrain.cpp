@@ -2,14 +2,15 @@
 
 
 /*
- * Based off of: http://lotsacode.wordpress.com/2010/02/24/perlin-noise-in-c/
+adapted from: 
+http://www.float4x4.net/index.php/2010/06/generating-realistic-and-playable-terrain-height-maps/
  */
 Perlin::Perlin(int seed){
     for(int i = 0; i < 256; i++) perms[i] = i; 
     int j;
     int temp; 
-    //srand(time(NULL)); //unreliable!!!!
-    srand(seed); 
+    srand(time(NULL)); //unreliable!!!!
+    //srand(seed); 
     for(int i = 256-1; i > 1; i--){
         j = rand() % i;
         temp = perms[j]; 
