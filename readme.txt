@@ -3,6 +3,14 @@ Procedural Terrain Generation
 Steven Hewitt cs184-eu -- Sean Han cs184-cb -- Huiming Han cs184-dc
 public github repo at: https://github.com/h94h12/MT-Terrain
 
+Youtube video link:
+
+
+
+https://www.youtube.com/watch?v=YRJ77O6KQiA
+
+
+
 
 Abstract/Description
 Our project uses isosurface extraction through marching tetrahedrons to render pseudo-random density functions in the form of a procedurally generated landscape.  The density function originates from a Perlin Noise-based heightmap and can be varied through user input.  The user can specify different island shapes corresponding to implicit equations of closed curves, specify the cube size for the marching tetrahedrons algorithm, explore the landscape, change the position of the sun, print the screen with different effects, and input a filename to write to when printing. that users can print the screen buffer to. The landscape contains clouds generated through perlin noise, an ocean, a skybox, optional fog, and a rising/setting sun.
